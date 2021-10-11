@@ -5,7 +5,6 @@
 
 #include "parser.h"
 
-static const char BRACKETS[] = "(){}[]";
 static const char COMMENT[] = "//";
 static const char* OPERATORS[] = {
     "!", "-", "*", "&", "~", "+", "/", "&", "|", "^", "&&", "||", "mod", "<<",
@@ -13,14 +12,6 @@ static const char* OPERATORS[] = {
     NULL
 };
 static const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[]";
-static const char* TOKEN_TYPES[] = {
-    "Unknown",
-    "Comment",
-    "Operator",
-    "Type",
-    "Identifier",
-};
-static const char* TRAITBRACKETS[] = {"[[", "]]"};
 static const char* TYPES[] = {
     "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "p",
     "farp", "void", NULL
@@ -34,8 +25,8 @@ char* append_char(char* str, char c, size_t i) {
     // If we've run out of room, reallocate the token string.
     if (i % 16 == 0) {
         str = realloc(str, i + 16);
-        memset(&str[i], 0, 16);
     }
+    str[i] = 0;
 
     return str;
 }
