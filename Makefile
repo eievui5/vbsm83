@@ -1,7 +1,7 @@
 BIN := bin/dcc-backend
 OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.c'))
 
-CFLAGS := -Isrc/include -Wall
+CFLAGS := -Isrc/include
 
 all: $(BIN)
 
