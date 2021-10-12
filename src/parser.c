@@ -7,22 +7,36 @@
 #include "exception.h"
 #include "parser.h"
 
-static const char COMMENT[] = "//";
-static const char BRACKETS[] = "()[]{}";
+const char COMMENT[] = "//";
+const char BRACKETS[] = "()[]{}";
+const char* KEYWORDS[] = {
+    "return",
+    NULL
+};
 // Values which denote the beginning of a number.
-static const char NUMBERS[] = "0123456789";
-static const char* OPERATORS[] = {
+const char NUMBERS[] = "0123456789";
+const char* OPERATORS[] = {
     "!", "-", "*", "&", "~", "+", "/", "&", "|", "^", "&&", "||", "mod", "<<",
     ">>", "<", ">", "<=", ">=", "!=", "==",
     NULL
 };
-static const char SINGLES[] = "()[]{},;";
-static const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
-static const char* TYPES[] = {
+const char SINGLES[] = "()[]{},;";
+const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
+const char* TYPES[] = {
     "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "p",
-    "farp", "void", NULL
+    "farp", "void",
+    NULL
 };
-static const char WHITESPACE[] = " \n\t";
+const char WHITESPACE[] = " \n\t";
+
+int strinstrs(const char* str, const char** strs) {
+    for (int i = 0; strs[i] != NULL; i++) {
+        if (strcmp(str, strs[i]) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 char* append_char(char* str, char c, size_t i) {
     // Append this character to the end of the string.
@@ -64,19 +78,15 @@ void get_token_type(Token* token) {
     }
 
     // Then operators...
-    for (int i = 0; OPERATORS[i] != NULL; i++) {
-        if (strcmp(token->string, OPERATORS[i]) == 0) {
-            token->type = TK_OPERATOR;
-            return;
-        }
+    if (strinstrs(token->string, OPERATORS) >= 0) {
+        token->type = TK_OPERATOR;
+        return;
     }
 
     // Types...
-    for (int i = 0; TYPES[i] != NULL; i++) {
-        if (strcmp(token->string, TYPES[i]) == 0) {
-            token->type = TK_TYPE;
-            return;
-        }
+    if (strinstrs(token->string, TYPES) >= 0) {
+        token->type = TK_TYPE;
+        return;
     }
 
     // Number constants.
@@ -98,8 +108,14 @@ void get_token_type(Token* token) {
         return;
     }
 
-    // Fallback.
-    token->type = TK_NONE;
+    // Keywords.
+    if (strinstrs(token->string, KEYWORDS) >= 0) {
+        token->type = TK_KEYWORD;
+        return;
+    }
+
+    // Fallback onto identifier.
+    token->type = TK_IDENTIFIER;;
 }
 
 /* Create a new token from a given file.
@@ -184,16 +200,6 @@ Token* get_token(FILE* input) {
         }
     }
 
-    // If we don't know the token's type, we can assume it's an identifier
-    // (sometimes).
-    if (new_token->type == TK_NONE) {
-        if (is_symbol) {
-            // Throw an error; Unknown Symbol.
-        } else {
-            new_token->type = TK_IDENTIFIER;
-        }
-    }
-
     return new_token;
 }
 
@@ -259,6 +265,6 @@ size_t remaining_tokens(Context* context) {
     return context->token_cnt - context->cur_token;
 }
 
-void skip_token(Context* context) {
-    context->cur_token++;
+Token* seek_token(Context* context, int off) {
+    return context->token_list[context->cur_token + off];
 }

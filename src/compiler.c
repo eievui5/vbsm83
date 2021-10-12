@@ -5,39 +5,20 @@
 #include "exception.h"
 #include "parser.h"
 
-typedef enum Registers {
-    RG_NONE, RG_A, RG_B, RG_C, RG_D, RG_E, RG_H, RG_L
-} Registers;
-
-typedef struct TempVar {
-    // Where is the temp var currently stored?
-    Registers reg;
-    int value;
-} TempVar;
-
-size_t temp_count = 0;
-TempVar* temp_vars = NULL;
-
-/* Push a TempVar to the temp_vars.
- * Allocates a new entry and copies the temp var into it.
-*/
-void temp_push(TempVar temp) {
-    temp_count++;
-    temp_vars = realloc(temp_vars, temp_count * sizeof(TempVar));
-    temp_vars[temp_count - 1] = temp;
-}
-
-/* Delete a given entry from the temp_vars
-*/
-void temp_delete(size_t i) {
-    memmove(&temp_vars[i], &temp_vars[i + 1], (temp_count - i) * sizeof(TempVar));
-    temp_count--;
-}
+typedef struct Function {
+    Context* context;
+    char* name;
+    int return_type;
+} Function;
 
 void function_context(Context* context, FILE* output) {
-    char* function_name = NULL;
+    Function function = {context};
 
-    puts("Found a function declaration.");
+    // Get the function's return type.
+    function.return_type = strinstrs(seek_token(context, -3)->string, TYPES);
+    if (function.return_type < 0) {
+        error("Invalid return type %s", seek_token(context, -3)->string);
+    }
 
     // Collect traits.
     while (remaining_tokens(context) > 0) {
@@ -70,9 +51,8 @@ void function_context(Context* context, FILE* output) {
         Token* next = next_token(context);
 
         if (next->type == TK_IDENTIFIER) {
-            printf("Function name is \"%s\"\n", next->string);
-            function_name = next->string;
-            fprintf(output, "_%s:\n", function_name);
+            function.name = next->string;
+            fprintf(output, "SECTION \"_%s function\" ROM0\n_%s:\n", function.name, function.name);
         } else {
             error("Expected identifier name for function!");
         }
@@ -93,10 +73,10 @@ void function_context(Context* context, FILE* output) {
                     if (expect_token(context, "{")) {
                         goto handle_block;
                     } else {
-                        error("Expected opening brace after \"%s\" argument list.", function_name);
+                        error("Expected opening brace after \"%s\" argument list.", function.name);
                     }
                 } else {
-                    error("Unhandled bracket \"%s\" in \"%s\" argument list.", next->string, function_name);
+                    error("Unhandled bracket \"%s\" in \"%s\" argument list.", next->string, function.name);
                 }
                 break;
             case TK_TYPE: {
@@ -109,7 +89,7 @@ void function_context(Context* context, FILE* output) {
                 }
 
                 if (peek_token(context)->type == TK_COMMA) {
-                    skip_token(context);
+                    context->cur_token++;
                 }
             } break;
             default:
@@ -121,6 +101,8 @@ void function_context(Context* context, FILE* output) {
     }
 
     handle_block: {
+        printf("Compiling function \"%s\" with return type %s.\n", function.name, TYPES[function.return_type]);
+
         while (remaining_tokens(context) > 0) {
             Token* next = next_token(context);
 
@@ -133,14 +115,15 @@ void function_context(Context* context, FILE* output) {
                 case TK_COMMENT:
                     fprintf(output, "\t; %s\n", next->string);
                     break;
+                case TK_KEYWORD:
+                    printf("Identified keyword: %s\n", next->string);
+                    break;
                 case TK_TYPE: {
-                    if (!expect_token(context, "%")) {
-                        error("Expected %% after type %s", next->string);
-                    }
-                    
                     Token* identifier = next_token(context);
-                    
-                    //size_t tempvar_i = strtoul(identifier->string);
+
+                    if (!identifier->type == TK_IDENTIFIER) {
+                        error("Expected identifier after type %s", next->string);
+                    }
                 } break;
                 default:
                     error("Unhandled token %s.", next->string);
@@ -161,6 +144,9 @@ void compile_context(Context* context, FILE* output) {
     while (remaining_tokens(context) > 0) {
         Token* next = next_token(context);
         switch (next->type) {
+            case TK_COMMENT:
+                fprintf(output, "; %s\n", next->string);
+                break;
             case TK_TYPE:
                 // Expect two tokens to begin function trait list.
                 if (expect_token(context, "[") && expect_token(context, "[")) {
