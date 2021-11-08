@@ -1,7 +1,7 @@
 BIN := bin/dcc-backend
-OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.c'))
+OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.cpp'))
 
-CFLAGS := -Isrc/include
+CFLAGS := -Isrc/include -std=c++17
 
 all: $(BIN)
 
@@ -15,14 +15,14 @@ rebuild:
 
 test: all
 	@echo " === BEGINNING TEST! ==="
-	./$(BIN) -o bin/output.asm -i examples/adder.dcc --info
+	./$(BIN) -o bin/output.asm -i examples/adder.dcc
 
 # Compile each .c file.
-obj/%.o: src/%.c
+obj/%.o: src/%.cpp
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $^
+	g++ $(CFLAGS) -c -o $@ $^
 
 # Link the output binary.
 $(BIN): $(OBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^
+	g++ $(CFLAGS) -o $@ $^

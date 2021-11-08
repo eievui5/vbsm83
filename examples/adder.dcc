@@ -1,9 +1,9 @@
-u8 [[ noninline pure ]] main() {
+     export fn u8 [[ noninline pure ]] main() {
     // Example comment.
     return 0;
 }
-//
-//u8 [[ noninline pure ]] add(u8 lhs, u8 rhs) {
+
+//export fn u8 [[ noninline pure ]] add(u8 lhs, u8 rhs) {
 //    u8 %tmp1=lhs+rhs; // \ return lhs + rhs;
 //    return %tmp1;
 //}

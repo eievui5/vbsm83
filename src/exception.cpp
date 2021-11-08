@@ -1,5 +1,4 @@
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 bool enable_info = false;
@@ -20,15 +19,4 @@ void error(char const *fmt, ...) {
     putc('\n', stderr);
 
     error_count++;
-}
-
-void info(FILE* output, char const *fmt, ...) {
-    if (enable_info) {
-        va_list ap;
-        
-        va_start(ap, fmt);
-        vfprintf(output, fmt, ap);
-        va_end(ap);
-        putc('\n', output);
-    }
 }
