@@ -1,15 +1,17 @@
 #pragma once
 
+#include <fstream>
 #include <string>
 #include <vector>
 
 #include "file.hpp"
 
 enum class Keyword {
-    EXTERN, EXPORT, STATIC,
     FN, VAR,
     RETURN,
 };
+
+enum class DeclLocal {EXPORT, EXTERN, STATIC};
 
 enum class TokenType {
     NONE,
@@ -24,6 +26,7 @@ enum class TokenType {
     INT,
     FLOAT,
     KEYWORD,
+    LOCALITY,
 };
 
 enum class VariableType {
@@ -36,7 +39,11 @@ enum class VariableType {
 class Token {
 public:
     TokenType type = TokenType::NONE;
-    Keyword keyword;
+    union {
+        Keyword keyword;
+        DeclLocal locality;
+        VariableType vtype;
+    };
     std::string string;
 
     void determine_type();
@@ -58,6 +65,7 @@ public:
 
 extern const char COMMENT[];
 extern const char BRACKETS[];
+extern const char* LOCALITY[];
 extern const char* KEYWORDS[];
 extern const char NUMBERS[];
 extern const char* OPERATORS[];
@@ -66,5 +74,5 @@ extern const char SYMBOLS[];
 extern const char* TYPES[];
 extern const char WHITESPACE[];
 
-Token read_token(File& infile);
-int strinstrs(const char* str, const char** strs);
+Token read_token(std::ifstream& infile);
+int strinstrs(std::string& str, const char** strs);

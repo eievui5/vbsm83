@@ -1,5 +1,6 @@
 #include <getopt.h>
-#include <stdio.h>
+#include <fstream>
+#include <iostream>
 #include <vector>
 
 #include "exception.hpp"
@@ -15,37 +16,34 @@ static struct option const longopts[] = {
 static const char shortopts[] = "i:o:";
 
 int main(int argc, char* argv[]) {
-    File input_file;
-    File output_file;
+    std::ifstream input_file;
+    std::ofstream output_file;
     char option_char;
 
     // Parse command-line options.
     while ((option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (option_char) {
-            case 'i':
-                input_file.open(optarg, "r");
-                if (!input_file)
-                    error("Error opening file %s!", *optarg);
-                break;
-            case 'o':
-                output_file.open(optarg, "w");
-                if (!output_file)
-                    error("Error opening file %s!", *optarg);
-                break;
+        case 'i':
+            input_file.open(optarg);
+            if (!input_file.is_open())
+                error("Error opening file %s!", optarg);
+            break;
+        case 'o':
+            output_file.open(optarg);
+            if (!output_file.is_open())
+                error("Error opening file %s!", optarg);
+            break;
         }
     }
 
-    if (!input_file)
+    if (!input_file.is_open())
         error("Missing input file!");
-    if (!output_file)
+    if (!output_file.is_open())
         error("Missing input file!");
 
     // Check for errors.
-    if (error_count > 0) {
-        fprintf(stderr, "CLI failed with %u errors.\n", error_count);
-        return 1;
-        exit(1);
-    }
+    if (error_count > 0)
+        fatal("CLI failed with %u errors.\n", error_count);
 
     TokenList token_list;
 
@@ -57,7 +55,8 @@ int main(int argc, char* argv[]) {
     }
 
     for (auto& i : token_list.tokens)
-        puts(i.string.c_str());
+        std::cout << i.string << ", ";
+    std::cout << '\n';
 
     Statement declaration = begin_declaration(token_list);
 }

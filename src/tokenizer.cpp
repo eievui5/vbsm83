@@ -1,5 +1,7 @@
 #include <cctype>
 #include <cstring>
+#include <fstream>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -14,11 +16,11 @@ constexpr int MAX_COMMENT = 80;
 const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
 const char* KEYWORDS[] = {
-    "extern", "export", "static",
     "fn", "var",
     "return",
     nullptr
 };
+const char* LOCALITY[] = {"extern", "export", "static"};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "0123456789";
 const char* OPERATORS[] = {
@@ -36,11 +38,10 @@ const char* TYPES[] = {
     nullptr
 };
 
-int strinstrs(const char* str, const char** strs) {
+int strinstrs(std::string& str, const char** strs) {
     for (int i = 0; strs[i] != NULL; i++) {
-        if (strcmp(str, strs[i]) == 0) {
+        if (str == strs[i])
             return i;
-        }
     }
     return -1;
 }
@@ -71,25 +72,35 @@ void Token::determine_type() {
         }
     }
 
-    // Keywords
-    {
-        int keyword = strinstrs(string.c_str(), KEYWORDS);
-        if (keyword != -1) {
-            type = TokenType::KEYWORD;
-            keyword = keyword;
-            return;
-        }
+    // Parse the various types of keywords.
+
+    // Declaration locality.
+    int local_type = strinstrs(string, LOCALITY);
+    if (local_type != -1) {
+        type = TokenType::LOCALITY;
+        locality = (DeclLocal) local_type;
+        return;
+    }
+
+    // Other keywords.
+    int keyword_type = strinstrs(string, KEYWORDS);
+    if (keyword_type != -1) {
+        type = TokenType::KEYWORD;
+        keyword = (Keyword) keyword_type;
+        return;
     }
 
     // Then operators...
-    if (strinstrs(string.c_str(), OPERATORS) >= 0) {
+    if (strinstrs(string, OPERATORS) >= 0) {
         type = TokenType::OPERATOR;
         return;
     }
 
     // Types...
-    if (strinstrs(string.c_str(), TYPES) >= 0) {
+    int type_type = strinstrs(string, TYPES);
+    if (type_type != -1) {
         type = TokenType::TYPE;
+        vtype = (VariableType) type_type;
         return;
     }
 
@@ -99,22 +110,16 @@ void Token::determine_type() {
         return;
     }
 
-    // Keywords.
-    if (strinstrs(string.c_str(), KEYWORDS) >= 0) {
-        type = TokenType::KEYWORD;
-        return;
-    }
-
     // Fallback onto identifier.
     type = TokenType::IDENTIFIER;;
 }
 
-Token read_token(File& infile) {
+Token read_token(std::ifstream& infile) {
     Token token;
     bool alpha_mode;
 
     while (1) {
-        char next_char = infile.getc();
+        char next_char = infile.get();
 
         if (next_char == EOF) {
             if (token.string.length() == 0) {
@@ -144,8 +149,10 @@ Token read_token(File& infile) {
         if (std::isspace(next_char))
             break;
 
-        if ((strchr(SYMBOLS, next_char) == NULL) == alpha_mode)
+        if ((strchr(SYMBOLS, next_char) == NULL) == alpha_mode) {
+            infile.unget();
             break;
+        }
 
         // If the token did not end, append to the raw string and continue.
         token.string += next_char;
@@ -156,7 +163,7 @@ Token read_token(File& infile) {
     if (token.type == TokenType::COMMENT) {
         // Skip the rest of the line when a comment appears.
         while (1) {
-            char next_char = infile.getc();
+            char next_char = infile.get();
 
             if (next_char == '\n' or next_char == EOF)
                 break;
