@@ -1,4 +1,15 @@
+#pragma once
+
 #include <string>
+#include <vector>
+
+#include "file.hpp"
+
+enum class Keyword {
+    EXTERN, EXPORT, STATIC,
+    FN, VAR,
+    RETURN,
+};
 
 enum class TokenType {
     NONE,
@@ -15,10 +26,11 @@ enum class TokenType {
     KEYWORD,
 };
 
-enum class Keyword {
-    EXTERN, EXPORT, STATIC,
-    FN, VAR,
-    RETURN,
+enum class VariableType {
+    U8, U16, U32, U64,
+    I8, I16, I32, I64,
+    F32, F64, PTR, FARPTR,
+    VOID,
 };
 
 class Token {
@@ -28,6 +40,20 @@ public:
     std::string string;
 
     void determine_type();
+};
+
+class TokenList {
+public:
+    std::vector<Token> tokens;
+    size_t index = 0;
+
+    inline Token& get_token() {
+        return tokens.at(index++);
+    }
+
+    inline Token& peek_token() {
+        return tokens.at(index);
+    }
 };
 
 extern const char COMMENT[];
@@ -40,4 +66,5 @@ extern const char SYMBOLS[];
 extern const char* TYPES[];
 extern const char WHITESPACE[];
 
-Token* read_token(std::ifstream& input);
+Token read_token(File& infile);
+int strinstrs(const char* str, const char** strs);

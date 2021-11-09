@@ -1,5 +1,6 @@
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 bool enable_info = false;
 unsigned error_count = 0;
@@ -19,4 +20,18 @@ void error(char const *fmt, ...) {
     putc('\n', stderr);
 
     error_count++;
+}
+
+/* Print a fatal error message to stderr and exit.
+*/
+void fatal(char const *fmt, ...) {
+    va_list ap;
+
+    fputs("fatal: ", stderr);
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    putc('\n', stderr);
+
+    exit(1);
 }

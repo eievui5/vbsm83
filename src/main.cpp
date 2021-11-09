@@ -1,9 +1,10 @@
-#include <cstdio>
-#include <fstream>
-#include <iostream>
 #include <getopt.h>
+#include <stdio.h>
+#include <vector>
 
 #include "exception.hpp"
+#include "file.hpp"
+#include "parser.hpp"
 #include "tokenizer.hpp"
 
 static struct option const longopts[] = {
@@ -14,48 +15,49 @@ static struct option const longopts[] = {
 static const char shortopts[] = "i:o:";
 
 int main(int argc, char* argv[]) {
-    std::ifstream input_file;
-    std::ofstream output_file;
+    File input_file;
+    File output_file;
     char option_char;
 
     // Parse command-line options.
     while ((option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (option_char) {
             case 'i':
-                input_file.open(optarg, std::ifstream::in);
-                if (!input_file.is_open()) {
+                input_file.open(optarg, "r");
+                if (!input_file)
                     error("Error opening file %s!", *optarg);
-                }
                 break;
             case 'o':
-                output_file.open(optarg, std::ofstream::out);
-                if (!output_file.is_open()) {
+                output_file.open(optarg, "w");
+                if (!output_file)
                     error("Error opening file %s!", *optarg);
-                }
                 break;
         }
     }
 
-    if (!input_file.is_open()) {
+    if (!input_file)
         error("Missing input file!");
-    }
-
-    if (!output_file.is_open()) {
+    if (!output_file)
         error("Missing input file!");
-    }
 
     // Check for errors.
     if (error_count > 0) {
-        std::fprintf(stderr, "CLI failed with %u errors.\n", error_count);
+        fprintf(stderr, "CLI failed with %u errors.\n", error_count);
         return 1;
+        exit(1);
     }
 
-    while (1) {
-        std::unique_ptr<Token> token {read_token(input_file)};
-        if (token == nullptr)
-            break;
-        std::cout << token->string << '\n';
+    TokenList token_list;
+
+    while (!input_file.eof()) {
+        Token token = read_token(input_file);
+        if (token.type == TokenType::NONE or token.type == TokenType::COMMENT)
+            continue;
+        token_list.tokens.push_back(token);
     }
 
-    return 0;
+    for (auto& i : token_list.tokens)
+        puts(i.string.c_str());
+
+    Statement declaration = begin_declaration(token_list);
 }

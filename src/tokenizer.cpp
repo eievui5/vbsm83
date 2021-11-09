@@ -1,13 +1,12 @@
 #include <cctype>
 #include <cstring>
-#include <fstream>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "exception.hpp"
+#include "file.hpp"
 #include "tokenizer.hpp"
 
 constexpr int MAX_COMMENT = 80;
@@ -110,26 +109,28 @@ void Token::determine_type() {
     type = TokenType::IDENTIFIER;;
 }
 
-Token* read_token(std::ifstream& input) {
-    Token* token {new Token};
+Token read_token(File& infile) {
+    Token token;
     bool alpha_mode;
 
     while (1) {
-        if (input.eof()) {
+        char next_char = infile.getc();
+
+        if (next_char == EOF) {
+            if (token.string.length() == 0) {
+                return token;
+            }
             break;
         }
 
-        char next_char = input.get();
-
-        if (token->string.length() == 0) {
+        if (token.string.length() == 0) {
             // Ignore leading whitespace.
-            if (std::isspace(next_char)) {
+            if (std::isspace(next_char))
                 continue;
-            }
 
             // Now check for single-char tokens, such as BRACKETS, ",", and ";".
             if (strchr(SINGLES, next_char) != NULL) {
-                token->string += next_char;
+                token.string += next_char;
                 break;
             }
 
@@ -140,32 +141,25 @@ Token* read_token(std::ifstream& input) {
         }
 
         // Whitespace delimits all tokens.
-        if (std::isspace(next_char)) {
+        if (std::isspace(next_char))
             break;
-        }
 
-        if ((strchr(SYMBOLS, next_char) == NULL) == alpha_mode) {
+        if ((strchr(SYMBOLS, next_char) == NULL) == alpha_mode)
             break;
-        }
 
         // If the token did not end, append to the raw string and continue.
-        token->string += next_char;
+        token.string += next_char;
     }
 
-    token->determine_type();
+    token.determine_type();
 
-    // Special handling for comments.
-    if (token->type == TokenType::COMMENT) {
-        // Copy the rest of the line when a comment appears. This allows the IR
-        // to output comments into the assembly code.
-        input.seekg(-1, std::ios_base::cur);
-        char comment[MAX_COMMENT];
-        input.getline(comment, MAX_COMMENT);
-        if (!input.fail()) {
-            token->string += comment;
-        } else {
-            delete token;
-            return nullptr;
+    if (token.type == TokenType::COMMENT) {
+        // Skip the rest of the line when a comment appears.
+        while (1) {
+            char next_char = infile.getc();
+
+            if (next_char == '\n' or next_char == EOF)
+                break;
         }
     }
 
