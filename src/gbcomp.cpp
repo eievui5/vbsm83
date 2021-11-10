@@ -8,40 +8,47 @@ template <typename T>
 T _verify(int num, VariableType type) {
     if ((T) num != num) {
         warn("%i does not fit within a %s. Truncating value to %i.",
-                num, TYPES[(int) type], (T) num);
+                num, get_type(type).str, (T) num);
     }
     return (T) num;
 }
 
-int verify_constant(int constant, VariableType type) {
+int verify_int(int num, VariableType type) {
     switch (type) {
     case VariableType::U8:
-        return _verify<uint8_t>(constant, type);
+        return _verify<uint8_t>(num, type);
     case VariableType::U16:
-        return _verify<uint16_t>(constant, type);
+        return _verify<uint16_t>(num, type);
     case VariableType::I8:
-        return _verify<int8_t>(constant, type);
+        return _verify<int8_t>(num, type);
     case VariableType::I16:
-        return _verify<int16_t>(constant, type);
+        return _verify<int16_t>(num, type);
 
     default:
-        warn("Unhandled variable type: %s", TYPES[(int) type]);
+        warn("Unhandled variable type: %s", get_type(type).str);
         return 0;
+    }
+}
+
+void put_label(std::ostream& outfile, std::string identifier, DeclLocal locality) {
+    switch (locality) {
+    case DeclLocal::EXPORT:
+        outfile << "_" << identifier << "::\n";
+        break;
+    case DeclLocal::STATIC:
+        outfile << "__" << identifier << ":\n";
+        break;
+    case DeclLocal::EXTERN:
+        error("Cannot generate an external label.");
+        break;
+    default:
+        error("Invalid declaration locality: %i", (int) locality);
     }
 }
 
 void compile_function(std::ostream& outfile, Function* func) {
     outfile << "; " << *func << '\n';
-    switch (func->locality) {
-    case DeclLocal::EXPORT:
-        outfile << "_" << func->identifier << "::\n";
-        break;
-    case DeclLocal::STATIC:
-        outfile << "__" << func->identifier << ":\n";
-        break;
-    default:
-        break;
-    }
+    put_label(outfile, func->identifier, func->locality);
 }
 
 void compile_return(std::ostream& outfile, TokenList& token_list, Function& func) {
@@ -54,9 +61,9 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
     case TokenType::INT:
         switch (func.return_type) {
         case VariableType::U8: case VariableType::I8:
-            outfile << "\tld c, " << verify_constant(std::stoi(ret_token.string), func.return_type) << '\n';
+            outfile << "\tld c, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
         case VariableType::U16: case VariableType::I16:
-            outfile << "\tld bc, " << verify_constant(std::stoi(ret_token.string), func.return_type) << '\n';
+            outfile << "\tld bc, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
 
         }
         break;
@@ -68,23 +75,16 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
         break;
     }
 
+    token_list.expect(";");
+
     // Finally, return!
     outfile << "\tret\n";
 }
 
 void compile_variable(std::ostream& outfile, Variable* var) {
     outfile << "; " << *var << '\n';
-    warn("Variables are not yet supported.");
-    switch (var->locality) {
-    case DeclLocal::EXPORT:
-        outfile << "_" << var->identifier << "::\n";
-        break;
-    case DeclLocal::STATIC:
-        outfile << "__" << var->identifier << ":\n";
-        break;
-    default:
-        break;
-    }
+    put_label(outfile, var->identifier, var->locality);
+    outfile << "\tDS " << get_type(var->variable_type).size << "\n\n";
 }
 
 void compile(TokenList& token_list, std::ofstream& outfile) {
@@ -128,8 +128,25 @@ void compile(TokenList& token_list, std::ofstream& outfile) {
                 break;
             }
             break;
+        case TokenType::BRACKET:
+            switch (next_token.string[0]) {
+            case '}':
+                if (current_function) {
+                    delete current_function;
+                    current_function = nullptr;
+                    outfile << '\n';
+                } else {
+                    error("Unexpected }");
+                }
+                break;
+            default:
+                warn("Unhandled bracket: %s", next_token.string.c_str());
+                break;
+            }
+            token_list.index++;
+            break;
         default:
-            warn("Unhandled token type from \"%s\"", next_token.string.c_str());
+            warn("Unhandled token \"%s\"", next_token.string.c_str());
             token_list.index++;
             break;
         }

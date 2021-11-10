@@ -15,7 +15,7 @@ rebuild:
 
 test: all
 	@echo " === BEGINNING TEST! ==="
-	./$(BIN) -o bin/output.asm -i examples/adder.dcc
+	./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
 
 # Compile each .c file.
 obj/%.o: src/%.cpp

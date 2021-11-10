@@ -10,6 +10,7 @@
 #include "exception.hpp"
 #include "file.hpp"
 #include "tokenizer.hpp"
+#include "types.hpp"
 
 constexpr int MAX_COMMENT = 80;
 
@@ -30,16 +31,9 @@ const char* OPERATORS[] = {
 };
 const char SINGLES[] = "(){},;";
 const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
-const char* TYPES[] = {
-    "u8", "u16", "u32", "u64",
-    "i8", "i16", "i32", "i64",
-    "f32", "f64",
-    "p", "farp", "void",
-    nullptr
-};
 
 int strinstrs(std::string& str, const char** strs) {
-    for (int i = 0; strs[i] != NULL; i++) {
+    for (int i = 0; strs[i] != nullptr; i++) {
         if (str == strs[i])
             return i;
     }
@@ -97,10 +91,8 @@ void Token::determine_type() {
     }
 
     // Types...
-    int type_type = strinstrs(string, TYPES);
-    if (type_type != -1) {
+    if (get_type_from_str(string) != -1) {
         type = TokenType::TYPE;
-        vtype = (VariableType) type_type;
         return;
     }
 

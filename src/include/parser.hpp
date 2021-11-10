@@ -1,12 +1,12 @@
 #pragma once
 
 #include "tokenizer.hpp"
+#include "types.hpp"
 
 enum class StatementType {NONE, FUNCTION, VARIABLE, RETURN};
 
 class Statement {
 public:
-    std::string string;
     StatementType type = StatementType::NONE;
 };
 

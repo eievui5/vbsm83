@@ -29,20 +29,12 @@ enum class TokenType {
     LOCALITY,
 };
 
-enum class VariableType {
-    U8, U16, U32, U64,
-    I8, I16, I32, I64,
-    F32, F64, PTR, FARPTR,
-    VOID,
-};
-
 class Token {
 public:
     TokenType type = TokenType::NONE;
     union {
         Keyword keyword;
         DeclLocal locality;
-        VariableType vtype;
     };
     std::string string;
 
@@ -53,6 +45,18 @@ class TokenList {
 public:
     std::vector<Token> tokens;
     size_t index = 0;
+
+    inline void expect(std::string str) {
+        if (peek_token().string != str)
+            fatal("Expected %s, got %s.", str.c_str(), peek_token().string.c_str());
+        index++;
+    }
+
+    inline void expect(std::string str, std::string message) {
+        if (peek_token().string != str)
+            fatal(message.c_str());
+        index++;
+    }
 
     inline Token& get_token() {
         return tokens.at(index++);
@@ -75,7 +79,6 @@ extern const char NUMBERS[];
 extern const char* OPERATORS[];
 extern const char SINGLES[];
 extern const char SYMBOLS[];
-extern const char* TYPES[];
 extern const char WHITESPACE[];
 
 Token read_token(std::ifstream& infile);

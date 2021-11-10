@@ -12,9 +12,10 @@
 static struct option const longopts[] = {
     {"input",	required_argument,	NULL, 'i'},
     {"output",	required_argument,	NULL, 'o'},
+    {"verbose",	required_argument,	NULL, 'v'},
     {NULL,		no_argument,		NULL, 0}
 };
-static const char shortopts[] = "i:o:";
+static const char shortopts[] = "i:o:v";
 
 int main(int argc, char* argv[]) {
     std::ifstream input_file;
@@ -33,6 +34,9 @@ int main(int argc, char* argv[]) {
             output_file.open(optarg);
             if (!output_file.is_open())
                 error("Error opening file %s!", optarg);
+            break;
+        case 'v':
+            enable_info = true;
             break;
         }
     }
