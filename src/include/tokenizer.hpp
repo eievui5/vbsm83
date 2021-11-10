@@ -11,7 +11,7 @@ enum class Keyword {
     RETURN,
 };
 
-enum class DeclLocal {EXPORT, EXTERN, STATIC};
+enum class DeclLocal {EXTERN, EXPORT, STATIC};
 
 enum class TokenType {
     NONE,

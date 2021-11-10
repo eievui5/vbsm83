@@ -1,4 +1,6 @@
-export fn u8 [[ noninline pure ]] main() {
+//export var u16 number;
+
+static fn u8 [[ noninline pure ]] main() {
     // Example comment.
     return 0;
 }

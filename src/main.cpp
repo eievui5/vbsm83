@@ -1,10 +1,11 @@
 #include <getopt.h>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 #include "exception.hpp"
-#include "file.hpp"
+#include "gbcomp.hpp"
 #include "parser.hpp"
 #include "tokenizer.hpp"
 
@@ -58,5 +59,15 @@ int main(int argc, char* argv[]) {
         std::cout << i.string << ", ";
     std::cout << '\n';
 
-    Statement declaration = begin_declaration(token_list);
+    std::unique_ptr<Statement> declaration {begin_declaration(token_list)};
+    switch (declaration->type) {
+    case StatementType::FUNCTION:
+        compile_function(output_file, (Function*) declaration.get());
+        break;
+    case StatementType::VARIABLE:
+        compile_variable(output_file, (Variable*) declaration.get());
+        break;
+    default:
+        break;
+    }
 }

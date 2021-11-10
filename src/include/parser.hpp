@@ -2,7 +2,7 @@
 
 #include "tokenizer.hpp"
 
-enum class StatementType {NONE, FUNCTION, RETURN};
+enum class StatementType {NONE, FUNCTION, VARIABLE, RETURN};
 
 class Statement {
 public:
@@ -10,14 +10,25 @@ public:
     StatementType type = StatementType::NONE;
 };
 
-class Function : public Statement {
+class Declaration : public Statement {
 public:
     std::string identifier;
     DeclLocal locality;
-    VariableType return_type;
     std::vector<std::string> trait_list;
+};
 
-    Function() {type = StatementType::FUNCTION;}
+class Function : public Declaration {
+public:
+    VariableType return_type;
+
+    inline Function() {type = StatementType::FUNCTION;}
+};
+
+class Variable : public Declaration {
+public:
+    VariableType variable_type;
+
+    inline Variable() {type = StatementType::VARIABLE;}
 };
 
 class Return : public Statement {
@@ -31,4 +42,5 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& os, Function function);
-Statement begin_declaration(TokenList& token_list);
+std::ostream& operator<<(std::ostream& os, Variable variable);
+Statement* begin_declaration(TokenList& token_list);
