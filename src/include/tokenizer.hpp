@@ -61,6 +61,10 @@ public:
     inline Token& peek_token() {
         return tokens.at(index);
     }
+
+    inline int remaining() {
+        return tokens.size() - index;
+    }
 };
 
 extern const char COMMENT[];

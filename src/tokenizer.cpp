@@ -22,7 +22,7 @@ const char* KEYWORDS[] = {
 };
 const char* LOCALITY[] = {"extern", "export", "static"};
 // Values which denote the beginning of a number.
-const char NUMBERS[] = "0123456789";
+const char NUMBERS[] = "-0123456789";
 const char* OPERATORS[] = {
     "!", "-", "*", "&", "~", "+", "/", "&", "|", "^", "&&", "||", "mod", "<<",
     ">>", "<", ">", "<=", ">=", "!=", "==",
@@ -139,9 +139,15 @@ Token read_token(std::ifstream& infile) {
                 break;
             }
 
-            // If the first character is a symbol, then it can be delimited by
-            // text (and vice-versa). This means "a+b" is valid, in addition to
-            // "a + b".
+            // Check for negative signs.
+            if (next_char == '-' and strchr(NUMBERS, infile.peek())) {
+                token.string += '-';
+                next_char = infile.get();
+            }
+
+            // If the first character is a symbol, then it can be delimited
+            // by text (and vice-versa). This means "a+b" is valid, in
+            // addition to "a + b".
             alpha_mode = strchr(SYMBOLS, next_char) != NULL;
         }
 

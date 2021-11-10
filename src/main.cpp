@@ -59,15 +59,5 @@ int main(int argc, char* argv[]) {
         std::cout << i.string << ", ";
     std::cout << '\n';
 
-    std::unique_ptr<Statement> declaration {begin_declaration(token_list)};
-    switch (declaration->type) {
-    case StatementType::FUNCTION:
-        compile_function(output_file, (Function*) declaration.get());
-        break;
-    case StatementType::VARIABLE:
-        compile_variable(output_file, (Variable*) declaration.get());
-        break;
-    default:
-        break;
-    }
+    compile(token_list, output_file);
 }

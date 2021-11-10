@@ -1,8 +1,8 @@
 //export var u16 number;
 
-static fn u8 [[ noninline pure ]] main() {
+static fn i16 [[ noninline pure ]] main() {
     // Example comment.
-    return 0;
+    return -1;
 }
 
 //export fn u8 [[ noninline pure ]] add(u8 lhs, u8 rhs) {
