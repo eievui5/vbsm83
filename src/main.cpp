@@ -55,8 +55,10 @@ int main(int argc, char* argv[]) {
 
     while (!input_file.eof()) {
         Token& token = read_token(input_file);
-        if (token.type == TokenType::NONE or token.type == TokenType::COMMENT)
+        if (token.type == TokenType::NONE or token.type == TokenType::COMMENT) {
+            delete &token;
             continue;
+        }
         token_list.tokens.push_back(token);
     }
 
@@ -66,5 +68,5 @@ int main(int argc, char* argv[]) {
 
     compile(token_list, output_file);
 
-    // The token_list and it's contents should be deleted here.
+    // The token_list and its contents should be deleted here.
 }
