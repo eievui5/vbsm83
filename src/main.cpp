@@ -54,21 +54,17 @@ int main(int argc, char* argv[]) {
     TokenList token_list;
 
     while (!input_file.eof()) {
-        Token token = read_token(input_file);
+        Token& token = read_token(input_file);
         if (token.type == TokenType::NONE or token.type == TokenType::COMMENT)
             continue;
         token_list.tokens.push_back(token);
     }
 
-    for (auto& i : token_list.tokens)
+    for (Token& i : token_list.tokens)
         std::cout << i.string << ", ";
     std::cout << '\n';
 
     compile(token_list, output_file);
 
-    LocalVariable number{1};
-    LocalVariable number2{2};
-    LocalVariable number3{1};
-    LocalVariable number4{2};
-    LocalVariable number5{1};
+    // The token_list and it's contents should be deleted here.
 }

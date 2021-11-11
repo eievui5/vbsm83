@@ -11,7 +11,7 @@
 #include "types.hpp"
 
 std::ostream& operator<<(std::ostream& os, Function function) {
-    os << LOCALITY[(int) function.locality] << ' ' << get_type(function.return_type).str << " [[ ";
+    os << STORAGE_CLASS[(int) function.storage_class] << ' ' << get_type(function.return_type).str << " [[ ";
     for (auto& i : function.trait_list) {
         os << i << ", ";
     }
@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& os, Function function) {
 }
 
 std::ostream& operator<<(std::ostream& os, Variable variable) {
-    os << LOCALITY[(int) variable.locality] << ' ' << get_type(variable.variable_type).str << " [[ ";
+    os << STORAGE_CLASS[(int) variable.storage_class] << ' ' << get_type(variable.variable_type).str << " [[ ";
     for (auto& i : variable.trait_list) {
         os << i << ", ";
     }
@@ -28,9 +28,9 @@ std::ostream& operator<<(std::ostream& os, Variable variable) {
     return os;
 }
 
-Function* function_declaration(TokenList& token_list, DeclLocal locality) {
+Function* function_declaration(TokenList& token_list, StorageClass storage_class) {
     Function* declaration = new Function;
-    declaration->locality = locality;
+    declaration->storage_class = storage_class;
     Token& return_type = token_list.get_token();
 
     if (return_type.type != TokenType::TYPE)
@@ -67,9 +67,9 @@ Function* function_declaration(TokenList& token_list, DeclLocal locality) {
     return declaration;
 }
 
-Variable* variable_declaration(TokenList& token_list, DeclLocal locality) {
+Variable* variable_declaration(TokenList& token_list, StorageClass storage_class) {
     Variable* declaration = new Variable;
-    declaration->locality = locality;
+    declaration->storage_class = storage_class;
 
     declaration->variable_type = (VariableType) get_type_from_str(token_list.get_token().string);
 
@@ -101,11 +101,11 @@ Variable* variable_declaration(TokenList& token_list, DeclLocal locality) {
 }
 
 Statement* begin_declaration(TokenList& token_list) {
-    Token& locality = token_list.get_token();
+    Token& storage_class = token_list.get_token();
     Token& declaration = token_list.get_token();
 
-    if (locality.type != TokenType::LOCALITY)
-        fatal("Unexpected token in declaration: %s", locality.string.c_str());
+    if (storage_class.type != TokenType::STORAGE_CLASS)
+        fatal("Unexpected token in declaration: %s", storage_class.string.c_str());
     if (declaration.type != TokenType::KEYWORD)
         fatal("Unexpected token in declaration: %s", declaration.string.c_str());
 
@@ -113,10 +113,10 @@ Statement* begin_declaration(TokenList& token_list) {
 
     switch (declaration.keyword) {
     case Keyword::FN:
-        statement = function_declaration(token_list, locality.locality);
+        statement = function_declaration(token_list, storage_class.storage_class);
         break;
     case Keyword::VAR:
-        statement = variable_declaration(token_list, locality.locality);
+        statement = variable_declaration(token_list, storage_class.storage_class);
         break;
     default:
         fatal(

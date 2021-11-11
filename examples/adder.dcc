@@ -1,6 +1,8 @@
 export var u16 number;
 
 static fn i8 [[ noninline pure ]] main() {
+    u8 %tmp1 = 4;
+    %tmp1 = 20;
     // Example comment.
     return -1;
 }

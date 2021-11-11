@@ -36,7 +36,7 @@ LocalVariable::LocalVariable(int size) {
     // Determine which register pool to use for this size.
     if (size == 1) {
         reg_pool = short_regs;
-    } else if (size == 2 or size == 4) {
+    } else if (size == 2) {// or size == 4) {
         reg_pool = wide_regs;
     }
 

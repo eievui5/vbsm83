@@ -13,7 +13,7 @@ class Statement {
 class Declaration : public Statement {
   public:
     std::string identifier;
-    DeclLocal locality;
+    StorageClass storage_class;
     std::vector<std::string> trait_list;
 };
 

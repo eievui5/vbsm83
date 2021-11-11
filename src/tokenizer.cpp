@@ -17,7 +17,7 @@ constexpr int MAX_COMMENT = 80;
 const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
 const char* KEYWORDS[] = {"fn", "var", "return", nullptr};
-const char* LOCALITY[] = {"extern", "export", "static"};
+const char* STORAGE_CLASS[] = {"extern", "export", "static"};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "-0123456789";
 const char* OPERATORS[] = {"!",  "-",   "*",  "&",  "~", "+", "/",  "&",  "|",  "^",  "&&",
@@ -61,11 +61,11 @@ void Token::determine_type() {
 
     // Parse the various types of keywords.
 
-    // Declaration locality.
-    int local_type = strinstrs(string, LOCALITY);
+    // Declaration storage_class.
+    int local_type = strinstrs(string, STORAGE_CLASS);
     if (local_type != -1) {
-        type = TokenType::LOCALITY;
-        locality = (DeclLocal) local_type;
+        type = TokenType::STORAGE_CLASS;
+        storage_class = (StorageClass) local_type;
         return;
     }
 
@@ -96,37 +96,38 @@ void Token::determine_type() {
     }
 
     // Fallback onto identifier.
+    info("%s is an identifier.", string.c_str());
     type = TokenType::IDENTIFIER;
 }
 
-Token read_token(std::ifstream& infile) {
-    Token token;
+Token& read_token(std::ifstream& infile) {
+    Token* token = new Token;
     bool alpha_mode;
 
     while (1) {
         char next_char = infile.get();
 
         if (next_char == EOF) {
-            if (token.string.length() == 0) {
-                return token;
+            if (token->string.length() == 0) {
+                return *token;
             }
             break;
         }
 
-        if (token.string.length() == 0) {
+        if (token->string.length() == 0) {
             // Ignore leading whitespace.
             if (std::isspace(next_char))
                 continue;
 
             // Now check for single-char tokens, such as BRACKETS, ",", and ";".
             if (strchr(SINGLES, next_char) != NULL) {
-                token.string += next_char;
+                token->string += next_char;
                 break;
             }
 
             // Check for negative signs.
             if (next_char == '-' and strchr(NUMBERS, infile.peek())) {
-                token.string += '-';
+                token->string += '-';
                 next_char = infile.get();
             }
 
@@ -146,12 +147,12 @@ Token read_token(std::ifstream& infile) {
         }
 
         // If the token did not end, append to the raw string and continue.
-        token.string += next_char;
+        token->string += next_char;
     }
 
-    token.determine_type();
+    token->determine_type();
 
-    if (token.type == TokenType::COMMENT) {
+    if (token->type == TokenType::COMMENT) {
         // Skip the rest of the line when a comment appears.
         while (1) {
             char next_char = infile.get();
@@ -161,5 +162,5 @@ Token read_token(std::ifstream& infile) {
         }
     }
 
-    return token;
+    return *token;
 }

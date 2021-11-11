@@ -1,53 +1,31 @@
 #include <cstdint>
 #include <fstream>
 
+#include "analysis.hpp"
 #include "exception.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
+#include "types.hpp"
 
-template <typename T> T _verify(int num, VariableType type) {
-    if ((T) num != num) {
-        warn("%i does not fit within a %s. Truncating value to %i.", num, get_type(type).str, (T) num);
-    }
-    return (T) num;
-}
-
-int verify_int(int num, VariableType type) {
-    switch (type) {
-    case VariableType::U8:
-        return _verify<uint8_t>(num, type);
-    case VariableType::U16:
-        return _verify<uint16_t>(num, type);
-    case VariableType::I8:
-        return _verify<int8_t>(num, type);
-    case VariableType::I16:
-        return _verify<int16_t>(num, type);
-
-    default:
-        warn("Unhandled variable type: %s", get_type(type).str);
-        return 0;
-    }
-}
-
-void put_label(std::ostream& outfile, std::string identifier, DeclLocal locality) {
-    switch (locality) {
-    case DeclLocal::EXPORT:
+void put_label(std::ostream& outfile, std::string identifier, StorageClass storage_class) {
+    switch (storage_class) {
+    case StorageClass::EXPORT:
         outfile << "_" << identifier << "::\n";
         break;
-    case DeclLocal::STATIC:
+    case StorageClass::STATIC:
         outfile << "__" << identifier << ":\n";
         break;
-    case DeclLocal::EXTERN:
+    case StorageClass::EXTERN:
         error("Cannot generate an external label.");
         break;
     default:
-        error("Invalid declaration locality: %i", (int) locality);
+        error("Invalid declaration storage_class: %i", (int) storage_class);
     }
 }
 
 void compile_function(std::ostream& outfile, Function* func) {
     outfile << "; " << *func << '\n';
-    put_label(outfile, func->identifier, func->locality);
+    put_label(outfile, func->identifier, func->storage_class);
 }
 
 void compile_return(std::ostream& outfile, TokenList& token_list, Function& func) {
@@ -78,7 +56,7 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
 
 void compile_variable(std::ostream& outfile, Variable* var) {
     outfile << "; " << *var << '\n';
-    put_label(outfile, var->identifier, var->locality);
+    put_label(outfile, var->identifier, var->storage_class);
     outfile << "\tDS " << get_type(var->variable_type).size << "\n\n";
 }
 
@@ -89,11 +67,12 @@ void compile(TokenList& token_list, std::ofstream& outfile) {
         Token& next_token = token_list.peek_token();
 
         switch (next_token.type) {
-        case TokenType::LOCALITY: {
+        case TokenType::STORAGE_CLASS: {
             Statement* declaration = begin_declaration(token_list);
 
             switch (declaration->type) {
             case StatementType::FUNCTION:
+                analyze_variables(token_list);
                 compile_function(outfile, (Function*) declaration);
                 if (current_function)
                     delete current_function;
