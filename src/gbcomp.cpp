@@ -3,6 +3,7 @@
 
 #include "exception.hpp"
 #include "parser.hpp"
+#include "register_allocation.hpp"
 
 template <typename T> T _verify(int num, VariableType type) {
     if ((T) num != num) {
@@ -56,16 +57,11 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
     Token& ret_token = token_list.get_token();
 
     switch (ret_token.type) {
-    case TokenType::INT:
-        switch (func.return_type) {
-        case VariableType::U8:
-        case VariableType::I8:
-            outfile << "\tld c, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
-        case VariableType::U16:
-        case VariableType::I16:
-            outfile << "\tld bc, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
-        }
-        break;
+    case TokenType::INT: {
+        LocalVariable return_variable{
+            get_type(func.return_type).size, get_type(func.return_type).size == 1 ? &c_reg : &bc_reg};
+        return_variable.set_const(outfile, verify_int(std::stoi(ret_token.string), func.return_type));
+    } break;
     case TokenType::IDENTIFIER:
         warn("Identifier returns are not yet supported.");
         break;

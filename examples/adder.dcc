@@ -1,6 +1,6 @@
 export var u16 number;
 
-static fn i16 [[ noninline pure ]] main() {
+static fn i8 [[ noninline pure ]] main() {
     // Example comment.
     return -1;
 }

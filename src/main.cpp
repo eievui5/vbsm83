@@ -7,6 +7,7 @@
 #include "exception.hpp"
 #include "gbcomp.hpp"
 #include "parser.hpp"
+#include "register_allocation.hpp"
 #include "tokenizer.hpp"
 
 static struct option const longopts[] = {
@@ -64,4 +65,10 @@ int main(int argc, char* argv[]) {
     std::cout << '\n';
 
     compile(token_list, output_file);
+
+    LocalVariable number{1};
+    LocalVariable number2{2};
+    LocalVariable number3{1};
+    LocalVariable number4{2};
+    LocalVariable number5{1};
 }
