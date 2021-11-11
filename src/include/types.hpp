@@ -3,15 +3,24 @@
 #include <string>
 
 enum class VariableType {
-    U8, U16, U32, U64,
-    I8, I16, I32, I64,
-    F32, F64, PTR, FARPTR,
+    U8,
+    U16,
+    U32,
+    U64,
+    I8,
+    I16,
+    I32,
+    I64,
+    F32,
+    F64,
+    PTR,
+    FARPTR,
     VOID,
 };
 
 struct BackendType {
-	const char* str;
-	const int size;
+    const char* str;
+    const int size;
 };
 
 extern const BackendType TYPES[];

@@ -6,8 +6,12 @@
 
 #include "file.hpp"
 
-enum class Keyword {FN, VAR,RETURN,};
-enum class DeclLocal {EXTERN, EXPORT, STATIC};
+enum class Keyword {
+    FN,
+    VAR,
+    RETURN,
+};
+enum class DeclLocal { EXTERN, EXPORT, STATIC };
 
 enum class TokenType {
     NONE,
@@ -26,7 +30,7 @@ enum class TokenType {
 };
 
 class Token {
-public:
+  public:
     TokenType type = TokenType::NONE;
     // I want to factor this union into functions rather than pre-processing it.
     union {
@@ -39,7 +43,7 @@ public:
 };
 
 class TokenList {
-public:
+  public:
     std::vector<Token> tokens;
     size_t index = 0;
 
@@ -55,9 +59,9 @@ public:
         index++;
     }
 
-    inline Token& get_token() {return tokens.at(index++);}
-    inline Token& peek_token() {return tokens.at(index);}
-    inline int remaining() {return tokens.size() - index;}
+    inline Token& get_token() { return tokens.at(index++); }
+    inline Token& peek_token() { return tokens.at(index); }
+    inline int remaining() { return tokens.size() - index; }
 };
 
 extern const char COMMENT[];

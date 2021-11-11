@@ -3,36 +3,36 @@
 #include "tokenizer.hpp"
 #include "types.hpp"
 
-enum class StatementType {NONE, FUNCTION, VARIABLE, RETURN};
+enum class StatementType { NONE, FUNCTION, VARIABLE, RETURN };
 
 class Statement {
-public:
+  public:
     StatementType type = StatementType::NONE;
 };
 
 class Declaration : public Statement {
-public:
+  public:
     std::string identifier;
     DeclLocal locality;
     std::vector<std::string> trait_list;
 };
 
 class Function : public Declaration {
-public:
+  public:
     VariableType return_type;
 
-    inline Function() {type = StatementType::FUNCTION;}
+    inline Function() { type = StatementType::FUNCTION; }
 };
 
 class Variable : public Declaration {
-public:
+  public:
     VariableType variable_type;
 
-    inline Variable() {type = StatementType::VARIABLE;}
+    inline Variable() { type = StatementType::VARIABLE; }
 };
 
 class Return : public Statement {
-public:
+  public:
     // I'd like to factor out this struct and just figure things out based on
     // what comes after the return.
     bool is_const;
