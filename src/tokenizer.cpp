@@ -16,19 +16,12 @@ constexpr int MAX_COMMENT = 80;
 
 const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
-const char* KEYWORDS[] = {
-    "fn", "var",
-    "return",
-    nullptr
-};
+const char* KEYWORDS[] = {"fn", "var", "return", nullptr};
 const char* LOCALITY[] = {"extern", "export", "static"};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "-0123456789";
-const char* OPERATORS[] = {
-    "!", "-", "*", "&", "~", "+", "/", "&", "|", "^", "&&", "||", "mod", "<<",
-    ">>", "<", ">", "<=", ">=", "!=", "==",
-    nullptr
-};
+const char* OPERATORS[] = {"!",  "-",   "*",  "&",  "~", "+", "/",  "&",  "|",  "^",  "&&",
+                           "||", "mod", "<<", ">>", "<", ">", "<=", ">=", "!=", "==", nullptr};
 const char SINGLES[] = "(){},;";
 const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
 
@@ -103,7 +96,7 @@ void Token::determine_type() {
     }
 
     // Fallback onto identifier.
-    type = TokenType::IDENTIFIER;;
+    type = TokenType::IDENTIFIER;
 }
 
 Token read_token(std::ifstream& infile) {

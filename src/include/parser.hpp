@@ -33,6 +33,8 @@ public:
 
 class Return : public Statement {
 public:
+    // I'd like to factor out this struct and just figure things out based on
+    // what comes after the return.
     bool is_const;
     union {
         uint64_t constant_value;

@@ -1,6 +1,6 @@
 #include <cstring>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -119,9 +119,10 @@ Statement* begin_declaration(TokenList& token_list) {
         statement = variable_declaration(token_list, locality.locality);
         break;
     default:
-        fatal("Unexpected keyword in declaration: %s.\n"
-              "Declarations must either be a var or fn.",
-              declaration.string.c_str());
+        fatal(
+            "Unexpected keyword in declaration: %s.\n"
+            "Declarations must either be a var or fn.",
+            declaration.string.c_str());
     }
 
     return statement;

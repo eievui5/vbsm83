@@ -4,11 +4,9 @@
 #include "exception.hpp"
 #include "parser.hpp"
 
-template <typename T>
-T _verify(int num, VariableType type) {
+template <typename T> T _verify(int num, VariableType type) {
     if ((T) num != num) {
-        warn("%i does not fit within a %s. Truncating value to %i.",
-                num, get_type(type).str, (T) num);
+        warn("%i does not fit within a %s. Truncating value to %i.", num, get_type(type).str, (T) num);
     }
     return (T) num;
 }
@@ -60,11 +58,12 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
     switch (ret_token.type) {
     case TokenType::INT:
         switch (func.return_type) {
-        case VariableType::U8: case VariableType::I8:
+        case VariableType::U8:
+        case VariableType::I8:
             outfile << "\tld c, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
-        case VariableType::U16: case VariableType::I16:
+        case VariableType::U16:
+        case VariableType::I16:
             outfile << "\tld bc, " << verify_int(std::stoi(ret_token.string), func.return_type) << '\n';
-
         }
         break;
     case TokenType::IDENTIFIER:

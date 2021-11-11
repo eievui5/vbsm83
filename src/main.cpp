@@ -1,5 +1,5 @@
-#include <getopt.h>
 #include <fstream>
+#include <getopt.h>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -10,10 +10,10 @@
 #include "tokenizer.hpp"
 
 static struct option const longopts[] = {
-    {"input",	required_argument,	NULL, 'i'},
-    {"output",	required_argument,	NULL, 'o'},
-    {"verbose",	required_argument,	NULL, 'v'},
-    {NULL,		no_argument,		NULL, 0}
+    {  "input", required_argument, NULL, 'i'},
+    { "output", required_argument, NULL, 'o'},
+    {"verbose", required_argument, NULL, 'v'},
+    {     NULL,       no_argument, NULL,   0}
 };
 static const char shortopts[] = "i:o:v";
 

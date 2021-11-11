@@ -1,5 +1,5 @@
 BIN := bin/dcc-backend
-OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.cpp'))
+OBJS := $(patsubst src/%.cpp, obj/%.o, $(shell find src/ -name '*.cpp'))
 
 CFLAGS := -Isrc/include -std=c++17
 
@@ -20,7 +20,7 @@ test: all
 # Compile each .c file.
 obj/%.o: src/%.cpp
 	@mkdir -p $(@D)
-	g++ $(CFLAGS) -c -o $@ $^
+	g++ $(CFLAGS) -c -o $@ $<
 
 # Link the output binary.
 $(BIN): $(OBJS)

@@ -11,7 +11,7 @@ enum class VariableType {
 
 struct BackendType {
 	const char* str;
-	int size;
+	const int size;
 };
 
 extern const BackendType TYPES[];

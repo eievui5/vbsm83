@@ -3,11 +3,20 @@
 #include "types.hpp"
 
 const BackendType TYPES[] = {
-    {"u8", 1}, {"u16", 2}, {"u32", 4}, {"u64", 8},
-    {"i8", 1}, {"i16", 2}, {"i32", 4}, {"i64", 8},
-    {"f32", 4}, {"f64", 8},
-    {"p", 2}, {"farp", 4}, {"void", 0},
-    {nullptr}
+    {   "u8", 1},
+    {  "u16", 2},
+    {  "u32", 4},
+    {  "u64", 8},
+    {   "i8", 1},
+    {  "i16", 2},
+    {  "i32", 4},
+    {  "i64", 8},
+    {  "f32", 4},
+    {  "f64", 8},
+    {    "p", 2},
+    { "farp", 4},
+    { "void", 0},
+    {nullptr  }
 };
 
 int get_type_from_str(std::string str) {
@@ -19,5 +28,5 @@ int get_type_from_str(std::string str) {
 }
 
 const BackendType& get_type(VariableType type) {
-	return TYPES[(int) type];
+    return TYPES[(int) type];
 }
