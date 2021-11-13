@@ -44,7 +44,7 @@ class Token {
 
     void determine_type();
 
-    inline const char* c_str() {return string.c_str();}
+    inline const char* c_str() { return string.c_str(); }
 };
 
 /* Control class for handling optimizations done by analysis.
@@ -53,8 +53,7 @@ allowing simple, encapsulated handling of special tokens.
 */
 class ControlToken : public Token {
   public:
-
-    ControlToken() {type = TokenType::CONTROL;}
+    ControlToken() { type = TokenType::CONTROL; }
 
     virtual void compile(std::ostream outfile, TokenList& token_list);
 };

@@ -7,9 +7,9 @@
 
 #include "exception.hpp"
 #include "parser.hpp"
+#include "statements/label.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
-#include "statements/label.hpp"
 
 // Move these to `label.cpp`
 std::ostream& operator<<(std::ostream& os, Function& function) {

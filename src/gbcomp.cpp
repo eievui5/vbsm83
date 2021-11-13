@@ -5,8 +5,8 @@
 #include "exception.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
-#include "types.hpp"
 #include "statements/label.hpp"
+#include "types.hpp"
 
 void put_label(std::ostream& outfile, std::string identifier, StorageClass storage_class) {
     switch (storage_class) {
