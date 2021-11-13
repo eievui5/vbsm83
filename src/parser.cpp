@@ -9,8 +9,10 @@
 #include "parser.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
+#include "statements/label.hpp"
 
-std::ostream& operator<<(std::ostream& os, Function function) {
+// Move these to `label.cpp`
+std::ostream& operator<<(std::ostream& os, Function& function) {
     os << STORAGE_CLASS[(int) function.storage_class] << ' ' << get_type(function.return_type).str << " [[ ";
     for (auto& i : function.trait_list) {
         os << i << ", ";
@@ -19,7 +21,7 @@ std::ostream& operator<<(std::ostream& os, Function function) {
     return os;
 }
 
-std::ostream& operator<<(std::ostream& os, Variable variable) {
+std::ostream& operator<<(std::ostream& os, Variable& variable) {
     os << STORAGE_CLASS[(int) variable.storage_class] << ' ' << get_type(variable.variable_type).str << " [[ ";
     for (auto& i : variable.trait_list) {
         os << i << ", ";
@@ -34,7 +36,7 @@ Function* function_declaration(TokenList& token_list, StorageClass storage_class
     Token& return_type = token_list.get_token();
 
     if (return_type.type != TokenType::TYPE)
-        fatal("Expected return type after function declaration, got: %s.", return_type.string.c_str());
+        fatal("Expected return type after function declaration, got: %s.", return_type.c_str());
 
     declaration->return_type = (VariableType) get_type_from_str(return_type.string);
 
@@ -50,7 +52,7 @@ Function* function_declaration(TokenList& token_list, StorageClass storage_class
     }
 
     if (token_list.peek_token().type != TokenType::IDENTIFIER)
-        fatal("%s is not a valid identifier.", token_list.peek_token().string.c_str());
+        fatal("%s is not a valid identifier.", token_list.peek_token().c_str());
     declaration->identifier = token_list.peek_token().string;
     token_list.index++;
 
@@ -85,7 +87,7 @@ Variable* variable_declaration(TokenList& token_list, StorageClass storage_class
     }
 
     if (token_list.peek_token().type != TokenType::IDENTIFIER)
-        fatal("%s is not a valid identifier.", token_list.peek_token().string.c_str());
+        fatal("%s is not a valid identifier.", token_list.peek_token().c_str());
     declaration->identifier = token_list.peek_token().string;
     token_list.index++;
 
@@ -105,9 +107,9 @@ Statement* begin_declaration(TokenList& token_list) {
     Token& declaration = token_list.get_token();
 
     if (storage_class.type != TokenType::STORAGE_CLASS)
-        fatal("Unexpected token in declaration: %s", storage_class.string.c_str());
+        fatal("Unexpected token in declaration: %s", storage_class.c_str());
     if (declaration.type != TokenType::KEYWORD)
-        fatal("Unexpected token in declaration: %s", declaration.string.c_str());
+        fatal("Unexpected token in declaration: %s", declaration.c_str());
 
     Statement* statement;
 
@@ -122,7 +124,61 @@ Statement* begin_declaration(TokenList& token_list) {
         fatal(
             "Unexpected keyword in declaration: %s.\n"
             "Declarations must either be a var or fn.",
-            declaration.string.c_str());
+            declaration.c_str());
+    }
+
+    return statement;
+}
+
+Label* read_storage_class(TokenList& token_list) {
+    // Collect the first key tokens of this label declaration.
+    Label* label_declaration = nullptr;
+    bool is_function;
+    Token& storage_class = token_list.expect_type(TokenType::STORAGE_CLASS);
+    Token& declaration_keyword = token_list.expect_type(TokenType::KEYWORD);
+    Token& variable_type = token_list.expect_type(TokenType::TYPE);
+
+    // Create either a variable or function depending on the declaration
+    // keyword.
+    if (declaration_keyword.string == "fn") {
+        is_function = true;
+        label_declaration = new Function;
+    } else if (declaration_keyword.string == "var") {
+        is_function = false;
+        label_declaration = new Variable;
+    } else {
+        fatal("Expected \"fn\" or \"var\" after storage class \"%s\"", storage_class.c_str());
+    }
+
+    // Determine storage class
+    label_declaration->storage_class = (StorageClass) strinstrs(storage_class.string, STORAGE_CLASS);
+    if ((int) label_declaration->storage_class == -1)
+        fatal("Invalid storage class: %s", storage_class.c_str());
+
+    // Store traits.
+    if (token_list.peek_token().string == "[[") {
+        token_list.index++;
+        while (token_list.peek_token().string != "]]") {
+            label_declaration->trait_list.push_back(token_list.get_token().string);
+        }
+        token_list.index++;
+    }
+
+    return label_declaration;
+}
+
+Statement* read_statement(TokenList& token_list) {
+    Statement* statement = nullptr;
+
+    Token& initial_token = token_list.peek_token();
+
+    switch (initial_token.type) {
+    case TokenType::STORAGE_CLASS:
+        statement = read_storage_class(token_list);
+        break;
+    default:
+        warn("Unhandled token \"%s\".", initial_token.c_str());
+        break;
     }
 
     return statement;

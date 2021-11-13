@@ -95,8 +95,6 @@ void Token::determine_type() {
         return;
     }
 
-    // Fallback onto identifier.
-    info("%s is an identifier.", string.c_str());
     type = TokenType::IDENTIFIER;
 }
 

@@ -1,6 +1,9 @@
+#include <iostream>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "exception.hpp"
 
 bool enable_info = false;
 unsigned error_count = 0;

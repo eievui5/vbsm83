@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "parser.hpp"
+#include "statements/label.hpp"
 
 void compile_function(std::ostream& outfile, Function* func);
 void compile_variable(std::ostream& outfile, Variable* var);

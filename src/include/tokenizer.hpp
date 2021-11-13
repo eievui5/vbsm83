@@ -6,6 +6,8 @@
 
 #include "exception.hpp"
 
+class TokenList;
+
 enum class Keyword {
     FN,
     VAR,
@@ -33,7 +35,7 @@ enum class TokenType {
 class Token {
   public:
     TokenType type = TokenType::NONE;
-    // I want to factor this union into functions rather than pre-processing it.
+    // The union is deprecated, please avoid using.
     union {
         Keyword keyword;
         StorageClass storage_class;
@@ -41,12 +43,20 @@ class Token {
     std::string string;
 
     void determine_type();
+
+    inline const char* c_str() {return string.c_str();}
 };
 
+/* Control class for handling optimizations done by analysis.
+Provides a compile function which handles output based on the current context,
+allowing simple, encapsulated handling of special tokens.
+*/
 class ControlToken : public Token {
   public:
 
     ControlToken() {type = TokenType::CONTROL;}
+
+    virtual void compile(std::ostream outfile, TokenList& token_list);
 };
 
 class TokenList {
@@ -56,13 +66,19 @@ class TokenList {
 
     inline Token& expect(std::string str) {
         if (peek_token().string != str)
-            fatal("Expected %s, got %s.", str.c_str(), peek_token().string.c_str());
+            fatal("Expected %s, got %s.", str.c_str(), peek_token().c_str());
         return get_token();
     }
 
     inline Token& expect(std::string str, const char* message) {
         if (peek_token().string != str)
             fatal(message);
+        return get_token();
+    }
+
+    inline Token& expect_type(TokenType type) {
+        if (peek_token().type != type)
+            fatal("Unexpected token %s.");
         return get_token();
     }
 

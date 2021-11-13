@@ -6,6 +6,7 @@
 #include "parser.hpp"
 #include "register_allocation.hpp"
 #include "types.hpp"
+#include "statements/label.hpp"
 
 void put_label(std::ostream& outfile, std::string identifier, StorageClass storage_class) {
     switch (storage_class) {
@@ -44,7 +45,7 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
         warn("Identifier returns are not yet supported.");
         break;
     default:
-        fatal("Unhandled return token: %s", ret_token.string.c_str());
+        fatal("Unhandled return token: %s", ret_token.c_str());
         break;
     }
 
@@ -98,7 +99,7 @@ void compile(TokenList& token_list, std::ofstream& outfile) {
                 }
                 break;
             default:
-                warn("Unhandled keyword %s", next_token.string.c_str());
+                warn("Unhandled keyword %s", next_token.c_str());
                 break;
             }
             break;
@@ -114,13 +115,13 @@ void compile(TokenList& token_list, std::ofstream& outfile) {
                 }
                 break;
             default:
-                warn("Unhandled bracket: %s", next_token.string.c_str());
+                warn("Unhandled bracket: %s", next_token.c_str());
                 break;
             }
             token_list.index++;
             break;
         default:
-            warn("Unhandled token \"%s\"", next_token.string.c_str());
+            warn("Unhandled token \"%s\"", next_token.c_str());
             token_list.index++;
             break;
         }

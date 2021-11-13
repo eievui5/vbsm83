@@ -1,34 +1,16 @@
 #pragma once
 
+#include <vector>
+
 #include "tokenizer.hpp"
 #include "types.hpp"
 
+// Statement types are deprecated, please do not use.
 enum class StatementType { NONE, FUNCTION, VARIABLE, RETURN };
 
 class Statement {
   public:
     StatementType type = StatementType::NONE;
-};
-
-class Declaration : public Statement {
-  public:
-    std::string identifier;
-    StorageClass storage_class;
-    std::vector<std::string> trait_list;
-};
-
-class Function : public Declaration {
-  public:
-    VariableType return_type;
-
-    inline Function() { type = StatementType::FUNCTION; }
-};
-
-class Variable : public Declaration {
-  public:
-    VariableType variable_type;
-
-    inline Variable() { type = StatementType::VARIABLE; }
 };
 
 class Return : public Statement {
@@ -43,6 +25,15 @@ class Return : public Statement {
     VariableType return_type;
 };
 
-std::ostream& operator<<(std::ostream& os, Function function);
-std::ostream& operator<<(std::ostream& os, Variable variable);
+class UnitContext {
+  public:
+    std::vector<Statement*> statements;
+
+    ~UnitContext() {
+        for (auto& i : statements) {
+            delete i;
+        }
+    }
+};
+
 Statement* begin_declaration(TokenList& token_list);
