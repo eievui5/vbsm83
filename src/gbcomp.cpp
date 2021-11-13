@@ -1,7 +1,6 @@
 #include <cstdint>
 #include <fstream>
 
-#include "analysis.hpp"
 #include "exception.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
@@ -73,7 +72,6 @@ void compile(TokenList& token_list, std::ofstream& outfile) {
 
             switch (declaration->type) {
             case StatementType::FUNCTION:
-                analyze_variables(token_list);
                 compile_function(outfile, (Function*) declaration);
                 if (current_function)
                     delete current_function;
