@@ -25,6 +25,12 @@ class FunctionContext : public UnitContext {
   public:
     std::unordered_map<std::string, LocalVariable*> local_vars;
     VariableType return_type;
+
+    ~FunctionContext() {
+        for (auto& i : local_vars) {
+            delete i.second;
+        }
+    }
 };
 
 // Statement types are deprecated, please do not use.
