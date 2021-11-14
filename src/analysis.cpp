@@ -8,6 +8,16 @@
 
 bool optimize_unused_assignment = true;
 
+void allocate_locals(FunctionContext& func_context) {
+    for (auto* i : func_context.statements) {
+        LocalVarDeclaration* declaration = dynamic_cast<LocalVarDeclaration*>(i);
+        if (!declaration)
+            continue;
+        func_context.local_vars[declaration->identifier] =
+            new LocalVariable(func_context.local_vars, get_type(declaration->variable_type).size);
+    }
+}
+
 void analyze_unused_assignment(UnitContext& unit_context) {
     // A list of assignments which have not yet been used.
     std::unordered_map<std::string, int> assignment_map;
@@ -18,7 +28,6 @@ void analyze_unused_assignment(UnitContext& unit_context) {
         LocalVarAssignment* assignment = dynamic_cast<LocalVarAssignment*>(unit_context.statements[i]);
         if (!assignment)
             continue;
-        info("Found assignment: %s = %s.", assignment->identifier.c_str(), assignment->value.c_str());
         if (assignment_map.contains(assignment->identifier)) {
             info("Removing unused assignment of %s.", assignment->identifier.c_str());
             warn("Unused assignement optimizations currently break SSA and are only a POC.");
@@ -44,7 +53,11 @@ void analyze_unit(UnitContext& unit_context) {
             continue;
 
         // When a function is found, run any applicable analysis on it.
-        info("Analyzing function %s.", func->identifier.c_str());
+        info("Analyzing function \"%s\".", func->identifier.c_str());
+
+        // Locals MUST be allocated to compile a function.
+        allocate_locals(func->unit_block);
+
         if (optimize_unused_assignment)
             analyze_unused_assignment(func->unit_block);
     }

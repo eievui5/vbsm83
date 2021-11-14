@@ -1,8 +1,8 @@
 export var u16 [[ ]] number;
 
-static fn i8 [[ noninline pure ]] main() {
-    u8 %tmp1 = 4;
-    u8 %tmp2 = %tmp1;
+static fn u16 [[ noninline pure ]] main() {
+    u16 %tmp1 = 4;
+    u16 %tmp2 = %tmp1;
     // Example comment.
     return %tmp2;
 }

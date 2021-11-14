@@ -7,13 +7,12 @@
 #include "types.hpp"
 
 void LocalVariable::assign(std::ostream& outfile, FunctionContext& context, std::string identifier, std::string value) {
-    outfile << "\tld " << context.local_vars[identifier]->container->name << ", ";
     if (determine_token_type(value) == TokenType::INT) {
-        outfile << value;
+        outfile << "\tld " << context.local_vars[identifier]->container->name << ", " << value << '\n';
     } else {
-        outfile << context.local_vars[value]->container->name;
+        outfile << "\tld " << context.local_vars[identifier]->container->name << ", "
+                << context.local_vars[value]->container->name << '\n';
     }
-    outfile << '\n';
 }
 
 void Label::define(std::ostream& outfile) {
@@ -52,9 +51,6 @@ void Function::define(std::ostream& outfile) {
 }
 
 void LocalVarDeclaration::compile(std::ostream& outfile, FunctionContext& context) {
-    LocalVariable* local_var = new LocalVariable(context.local_vars, get_type(variable_type).size);
-    context.local_vars.reserve(1);
-    context.local_vars.emplace(identifier, local_var);
     outfile << "\t; " << get_type(variable_type).str << ' ' << identifier << '\n';
 }
 
