@@ -52,12 +52,10 @@ void Function::define(std::ostream& outfile) {
 }
 
 void LocalVarDeclaration::compile(std::ostream& outfile, FunctionContext& context) {
-    info("Allocating %s of size %i.", identifier.c_str(), get_type(variable_type).size);
     LocalVariable* local_var = new LocalVariable(context.local_vars, get_type(variable_type).size);
     context.local_vars.reserve(1);
     context.local_vars.emplace(identifier, local_var);
     outfile << "\t; " << get_type(variable_type).str << ' ' << identifier << '\n';
-    info("Finished %s.", identifier.c_str());
 }
 
 void LocalVarAssignment::compile(std::ostream& outfile, FunctionContext& context) {
