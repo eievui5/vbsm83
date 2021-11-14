@@ -62,11 +62,12 @@ int main(int argc, char* argv[]) {
         token_list.tokens.push_back(token);
     }
 
-    for (Token* i : token_list.tokens)
-        std::cout << i->string << ", ";
-    std::cout << '\n';
+    if (info()) {
+        for (Token* i : token_list.tokens)
+            std::cout << i->string << ", ";
+        std::cout << '\n';
+    }
 
-    Statement* debug_statement = read_statement(token_list);
-    debug_statement->write(std::cout);
-    delete debug_statement;
+    UnitContext root_context;
+    parse_token_list(root_context, token_list);
 }

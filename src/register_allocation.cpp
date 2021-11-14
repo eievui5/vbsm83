@@ -27,9 +27,7 @@ const CPUReg hl_reg = {"hl", 2, nullptr, hl_children};
 
 const CPUReg* short_regs[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, nullptr};
 const CPUReg* wide_regs[] = {&bc_reg, &de_reg, &hl_reg, nullptr};
-
-std::vector<LocalVariable*> local_vars;
-
+/*
 LocalVariable::LocalVariable(int size) {
     const CPUReg** reg_pool = nullptr;
 
@@ -86,3 +84,4 @@ LocalVariable::LocalVariable(int size, const CPUReg* force_reg) {
 void LocalVariable::set_const(std::ostream& outfile, int value) {
     outfile << "\tld " << container->name << ", " << value << '\n';
 }
+*/

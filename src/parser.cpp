@@ -8,8 +8,16 @@
 #include "exception.hpp"
 #include "parser.hpp"
 #include "statements/label.hpp"
+#include "statements/local_var.hpp"
+#include "statements/return.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
+
+UnitContext::~UnitContext() {
+    for (Statement* i : statements) {
+        delete i;
+    }
+}
 
 Function* function_declaration(TokenList& token_list, StorageClass storage_class) {
     Function* declaration = new Function;
@@ -41,12 +49,6 @@ Function* function_declaration(TokenList& token_list, StorageClass storage_class
     token_list.expect(")", "Expected closing parenthesis (arguments are not yet supported).");
     token_list.expect("{");
 
-    if (enable_info) {
-        std::stringstream infostring;
-        declaration->write(infostring);
-        info("%s", infostring.str().c_str());
-    }
-
     return declaration;
 }
 
@@ -73,12 +75,6 @@ Variable* variable_declaration(TokenList& token_list, StorageClass storage_class
     token_list.index++;
 
     token_list.expect(";");
-
-    if (enable_info) {
-        std::stringstream infostring;
-        declaration->write(infostring);
-        info("%s", infostring.str().c_str());
-    }
 
     return declaration;
 }
@@ -109,6 +105,69 @@ Statement* begin_declaration(TokenList& token_list) {
     }
 
     return statement;
+}
+
+/* Read a local variable off the token list.
+Potentially adds an assignment as well, if the variable is initialized.
+*/
+void read_local_var(UnitContext& unit_block, TokenList& token_list) {
+    LocalVarDeclaration* declaration = new LocalVarDeclaration;
+
+    declaration->variable_type = (VariableType) get_type_from_str(token_list.get_token().string);
+    declaration->identifier = token_list.get_token().string;
+
+    unit_block.append(declaration);
+
+    if (token_list.peek_token().string == "=") {
+        token_list.index++;
+        LocalVarAssignment* assignment = new LocalVarAssignment;
+        assignment->identifier = declaration->identifier;
+        assignment->value = token_list.get_token().string;
+        token_list.expect(";");
+        unit_block.append(assignment);
+    } else {
+        token_list.expect(";");
+    }
+}
+
+void parse_function_block(Function& function, TokenList& token_list) {
+    while (token_list.peek_token().string != "}") {
+        switch (token_list.peek_token().type) {
+        case TokenType::KEYWORD:
+            if (token_list.peek_token().string == "return") {
+                ReturnStatement* return_statement = new ReturnStatement;
+                token_list.index++;
+                return_statement->value = token_list.get_token().string;
+                token_list.expect(";");
+                function.unit_block.append(return_statement);
+            } else {
+                warn("Unhandled keyword \"%s\".", token_list.peek_token().c_str());
+            }
+            break;
+        case TokenType::IDENTIFIER:
+            // Identifiers are vague, so we need to do an additional check on them.
+            if (token_list.peek_token(1).string == "=") {
+                // This is quite short so I don't need a function for this case.
+                LocalVarAssignment* assignment = new LocalVarAssignment;
+                assignment->identifier = token_list.get_token().string;
+                token_list.expect("=");
+                assignment->value = token_list.get_token().string;
+                token_list.expect(";");
+                function.unit_block.append(assignment);
+            } else {
+                warn("Unhandled identifier \"%s\".", token_list.peek_token().c_str());
+            }
+            break;
+        case TokenType::TYPE:
+            read_local_var(function.unit_block, token_list);
+            break;
+        default:
+            warn("Unhandled token \"%s\".", token_list.peek_token().c_str());
+            token_list.index++;
+            break;
+        }
+    }
+    token_list.index++;
 }
 
 Label* read_storage_class(TokenList& token_list) {
@@ -154,6 +213,10 @@ Label* read_storage_class(TokenList& token_list) {
         while (token_list.get_token().string != ")") {
             warn("Function arguments are not yet suppoted.");
         }
+        if (label_declaration->storage_class != StorageClass::EXTERN) {
+            token_list.expect("{");
+            parse_function_block(*dynamic_cast<Function*>(label_declaration), token_list);
+        }
     } else {
         if (token_list.peek_token().string == "=") {
             // See docs/output.md for information on how to implement variable init.
@@ -177,8 +240,18 @@ Statement* read_statement(TokenList& token_list) {
         break;
     default:
         warn("Unhandled token \"%s\".", initial_token.c_str());
+        token_list.index++;
         break;
     }
 
     return statement;
+}
+
+void parse_token_list(UnitContext& context, TokenList& token_list) {
+    while (token_list.remaining()) {
+        Statement* debug_statement = read_statement(token_list);
+        if (debug_statement) {
+            context.statements.push_back(debug_statement);
+        }
+    }
 }

@@ -90,6 +90,7 @@ class TokenList {
 
     inline Token& get_token() { return *tokens.at(index++); }
     inline Token& peek_token() { return *tokens.at(index); }
+    inline Token& peek_token(int lookahead) { return *tokens.at(index + lookahead); }
     inline int remaining() { return tokens.size() - index; }
 
     inline ~TokenList() {

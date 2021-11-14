@@ -8,6 +8,12 @@
 bool enable_info = false;
 unsigned error_count = 0;
 
+bool info() {
+    if (enable_info)
+        fputs("\033[1m\033[93minfo: \033[0m", stdout);
+    return enable_info;
+}
+
 /* Print a warning message to stderr.
  * Warnings should warn the iser of strange or unsafe behavior that does not
  * prevent compilation.

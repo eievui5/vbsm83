@@ -38,9 +38,7 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
 
     switch (ret_token.type) {
     case TokenType::INT: {
-        LocalVariable return_variable{
-            get_type(func.variable_type).size, get_type(func.variable_type).size == 1 ? &c_reg : &bc_reg};
-        return_variable.set_const(outfile, verify_int(std::stoi(ret_token.string), func.variable_type));
+        warn("OOPS THIS CODE IS DEPRECAYED PLEASE DELETE THANKS.");
     } break;
     case TokenType::IDENTIFIER:
         warn("Identifier returns are not yet supported.");

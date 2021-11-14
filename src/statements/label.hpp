@@ -14,18 +14,15 @@ class Label : public Statement {
 
 class Function : public Label {
   public:
+    UnitContext unit_block;
+
     inline Function() { type = StatementType::FUNCTION; }
-
-    void write(std::ostream& os);
-
     ~Function() = default;
 };
 
 class Variable : public Label {
   public:
     inline Variable() { type = StatementType::VARIABLE; }
-
-    void write(std::ostream& os);
 
     ~Variable() = default;
 };
