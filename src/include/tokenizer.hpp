@@ -56,7 +56,7 @@ class ControlToken : public Token {
   public:
     ControlToken() { type = TokenType::CONTROL; }
 
-    virtual void compile(std::ostream outfile, TokenList& token_list);
+    virtual void compile(std::ostream& outfile, TokenList& token_list);
 };
 
 class TokenList {

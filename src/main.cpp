@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "compile.hpp"
 #include "exception.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
@@ -69,4 +70,5 @@ int main(int argc, char* argv[]) {
 
     UnitContext root_context;
     parse_token_list(root_context, token_list);
+    compile(root_context, output_file);
 }

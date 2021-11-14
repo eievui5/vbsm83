@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ostream>
 #include <vector>
 
 #include "tokenizer.hpp"
@@ -21,23 +22,9 @@ enum class StatementType { NONE, FUNCTION, VARIABLE, RETURN };
 
 class Statement {
   public:
-    StatementType type = StatementType::NONE;
+    virtual void compile(std::ostream& outfile) = 0;
 
     virtual ~Statement() = default;
-};
-
-class Return : public Statement {
-  public:
-    // I'd like to factor out this struct and just figure things out based on
-    // what comes after the return.
-    bool is_const;
-    union {
-        uint64_t constant_value;
-        std::string identifier;
-    };
-    VariableType return_type;
-
-    ~Return() = default;
 };
 
 Statement* begin_declaration(TokenList& token_list);

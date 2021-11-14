@@ -9,6 +9,8 @@ class LocalVarDeclaration : public Statement {
     std::string identifier;
     VariableType variable_type;
 
+    void compile(std::ostream& outfile);
+
     ~LocalVarDeclaration() = default;
 };
 
@@ -16,4 +18,6 @@ class LocalVarAssignment : public Statement {
   public:
     std::string identifier;
     std::string value;
+
+    void compile(std::ostream& outfile);
 };

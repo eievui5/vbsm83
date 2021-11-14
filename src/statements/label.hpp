@@ -9,6 +9,8 @@ class Label : public Statement {
     std::vector<std::string> trait_list;
     VariableType variable_type;
 
+    void compile(std::ostream& outfile);
+
     ~Label() = default;
 };
 
@@ -16,13 +18,10 @@ class Function : public Label {
   public:
     UnitContext unit_block;
 
-    inline Function() { type = StatementType::FUNCTION; }
     ~Function() = default;
 };
 
 class Variable : public Label {
   public:
-    inline Variable() { type = StatementType::VARIABLE; }
-
     ~Variable() = default;
 };
