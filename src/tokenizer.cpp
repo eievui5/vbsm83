@@ -17,7 +17,7 @@ constexpr int MAX_COMMENT = 80;
 const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
 const char* KEYWORDS[] = {"fn", "var", "return", nullptr};
-const char* STORAGE_CLASS[] = {"extern", "export", "static"};
+const char* STORAGE_CLASS[] = {"extern", "export", "static", nullptr};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "-0123456789";
 const char* OPERATORS[] = {"!",  "-",   "*",  "&",  "~", "+", "/",  "&",  "|",  "^",  "&&",
@@ -33,69 +33,60 @@ int strinstrs(std::string& str, const char** strs) {
     return -1;
 }
 
-void Token::determine_type() {
+TokenType determine_token_type(std::string string) {
     // Determine token type.
 
     // Check for comments first
     if (string.rfind(COMMENT, 0) != std::string::npos) {
-        type = TokenType::COMMENT;
-        return;
+        return TokenType::COMMENT;
     }
 
     // Collect single-char tokens.
     if (string.length() == 1) {
         if (string[0] == ',') {
-            type = TokenType::COMMA;
-            return;
+            return TokenType::COMMA;
         }
         if (string[0] == ';') {
-            type = TokenType::SEMICOLON;
-            return;
+            return TokenType::SEMICOLON;
         }
 
         if (strchr(BRACKETS, string[0])) {
-            type = TokenType::BRACKET;
-            return;
+            return TokenType::BRACKET;
         }
     }
 
     // Parse the various types of keywords.
 
     // Declaration storage_class.
-    int local_type = strinstrs(string, STORAGE_CLASS);
-    if (local_type != -1) {
-        type = TokenType::STORAGE_CLASS;
-        storage_class = (StorageClass) local_type;
-        return;
+    if (strinstrs(string, STORAGE_CLASS) != -1) {
+        return TokenType::STORAGE_CLASS;
     }
 
     // Other keywords.
-    int keyword_type = strinstrs(string, KEYWORDS);
-    if (keyword_type != -1) {
-        type = TokenType::KEYWORD;
-        keyword = (Keyword) keyword_type;
-        return;
+    if (strinstrs(string, KEYWORDS) != -1) {
+        return TokenType::KEYWORD;
     }
 
     // Then operators...
     if (strinstrs(string, OPERATORS) >= 0) {
-        type = TokenType::OPERATOR;
-        return;
+        return TokenType::OPERATOR;
     }
 
     // Types...
     if (get_type_from_str(string) != -1) {
-        type = TokenType::TYPE;
-        return;
+        return TokenType::TYPE;
     }
 
     // Number constants.
     if (strchr(NUMBERS, string[0])) {
-        type = TokenType::INT;
-        return;
+        return TokenType::INT;
     }
 
-    type = TokenType::IDENTIFIER;
+    return TokenType::IDENTIFIER;
+}
+
+void Token::determine_type() {
+    type = determine_token_type(string);
 }
 
 Token* read_token(std::ifstream& infile) {

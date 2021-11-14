@@ -4,9 +4,9 @@
 
 #include "parser.hpp"
 
-class ReturnStatement : public Statement {
+class ReturnStatement : public FuncStatement {
   public:
     std::string value;
 
-    void compile(std::ostream& outfile);
+    void compile(std::ostream& outfile, FunctionContext& context);
 };

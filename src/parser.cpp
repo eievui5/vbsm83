@@ -43,6 +43,8 @@ void read_local_var(UnitContext& unit_block, TokenList& token_list) {
 }
 
 void parse_function_block(Function& function, TokenList& token_list) {
+    function.unit_block.return_type = function.variable_type;
+
     while (token_list.peek_token().string != "}") {
         switch (token_list.peek_token().type) {
         case TokenType::KEYWORD:

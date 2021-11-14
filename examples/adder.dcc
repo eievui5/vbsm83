@@ -2,9 +2,9 @@ export var u16 [[ ]] number;
 
 static fn i8 [[ noninline pure ]] main() {
     u8 %tmp1 = 4;
-    %tmp1 = 20;
+    u8 %tmp2 = %tmp1;
     // Example comment.
-    return -1;
+    return %tmp2;
 }
 
 //export fn u8 [[ noninline pure ]] add(u8 lhs, u8 rhs) {

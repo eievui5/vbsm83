@@ -27,8 +27,8 @@ const CPUReg hl_reg = {"hl", 2, nullptr, hl_children};
 
 const CPUReg* short_regs[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, nullptr};
 const CPUReg* wide_regs[] = {&bc_reg, &de_reg, &hl_reg, nullptr};
-/*
-LocalVariable::LocalVariable(int size) {
+
+LocalVariable::LocalVariable(std::unordered_map<std::string, LocalVariable*>& local_vars, int size) : size(size) {
     const CPUReg** reg_pool = nullptr;
 
     // Determine which register pool to use for this size.
@@ -45,11 +45,11 @@ LocalVariable::LocalVariable(int size) {
             for (auto& i : local_vars) {
                 // If any matches are found, check the next register.
                 const CPUReg* target_reg = *reg_pool;
-                if (i->container == *reg_pool or i->container == target_reg->parent)
+                if (i.second->container == *reg_pool or i.second->container == target_reg->parent)
                     goto next_reg;
                 if (target_reg->children != nullptr) {
                     for (int j = 0; target_reg->children[j] != nullptr; j++) {
-                        if (target_reg->children[j] == i->container)
+                        if (target_reg->children[j] == i.second->container)
                             goto next_reg;
                     }
                 }
@@ -59,7 +59,7 @@ LocalVariable::LocalVariable(int size) {
             // local var and exit.
             container = *reg_pool;
             info("Selected register %s for %i-byte value.", container->name.c_str(), size);
-            goto cleanup;
+            return;
         next_reg:
             reg_pool++;
         }
@@ -69,19 +69,5 @@ LocalVariable::LocalVariable(int size) {
     // However, I don't wanna write this logic right now. Let's just error out
     // for now.
     fatal("Ran out of registers for size of %i. Stack variables are not yet supported.", size);
-
-cleanup:
-    local_vars.push_back(this);
     return;
 }
-
-LocalVariable::LocalVariable(int size, const CPUReg* force_reg) {
-    if (size != force_reg->size)
-        fatal("Invalid forced register for variable size.");
-    container = force_reg;
-}
-
-void LocalVariable::set_const(std::ostream& outfile, int value) {
-    outfile << "\tld " << container->name << ", " << value << '\n';
-}
-*/

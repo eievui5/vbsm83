@@ -9,11 +9,6 @@
 
 class TokenList;
 
-enum class Keyword {
-    FN,
-    VAR,
-    RETURN,
-};
 enum class StorageClass { EXTERN, EXPORT, STATIC };
 
 enum class TokenType {
@@ -36,11 +31,6 @@ enum class TokenType {
 class Token {
   public:
     TokenType type = TokenType::NONE;
-    // The union is deprecated, please avoid using.
-    union {
-        Keyword keyword;
-        StorageClass storage_class;
-    };
     std::string string;
 
     void determine_type();
@@ -111,3 +101,4 @@ extern const char WHITESPACE[];
 
 Token* read_token(std::ifstream& infile);
 int strinstrs(std::string& str, const char** strs);
+TokenType determine_token_type(std::string string);

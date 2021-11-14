@@ -21,6 +21,7 @@ void analyze_unused_assignment(UnitContext& unit_context) {
         info("Found assignment: %s = %s.", assignment->identifier.c_str(), assignment->value.c_str());
         if (assignment_map.contains(assignment->identifier)) {
             info("Removing unused assignment of %s.", assignment->identifier.c_str());
+            warn("Unused assignement optimizations currently break SSA and are only a POC.");
             assignment_map.erase(assignment->identifier);
             unused_assignments.push_back(i);
         }

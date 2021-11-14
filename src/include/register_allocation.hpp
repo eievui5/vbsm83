@@ -3,7 +3,9 @@
 #include <algorithm>
 #include <fstream>
 #include <string>
-#include <vector>
+#include <unordered_map>
+
+class FunctionContext;
 
 struct CPUReg {
     // The symbol used to identify the register; how it appears in the output code.
@@ -14,6 +16,17 @@ struct CPUReg {
     const CPUReg* parent;
     // Registers that this register contains.
     const CPUReg** children;
+};
+
+class LocalVariable {
+  public:
+    // Which register is this variable stored in?
+    const CPUReg* container;
+    const int size;
+
+    void assign(std::ostream& outfile, FunctionContext& context, std::string identifier, std::string value);
+
+    LocalVariable(std::unordered_map<std::string, LocalVariable*>& local_vars, int size);
 };
 
 extern const CPUReg a_reg;
