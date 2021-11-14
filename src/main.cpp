@@ -54,19 +54,19 @@ int main(int argc, char* argv[]) {
     TokenList token_list;
 
     while (!input_file.eof()) {
-        Token& token = read_token(input_file);
-        if (token.type == TokenType::NONE or token.type == TokenType::COMMENT) {
-            delete &token;
+        Token* token = read_token(input_file);
+        if (token->type == TokenType::NONE or token->type == TokenType::COMMENT) {
+            delete token;
             continue;
         }
         token_list.tokens.push_back(token);
     }
 
-    for (Token& i : token_list.tokens)
-        std::cout << i.string << ", ";
+    for (Token* i : token_list.tokens)
+        std::cout << i->string << ", ";
     std::cout << '\n';
 
-    compile(token_list, output_file);
-
-    // The token_list and its contents should be deleted here.
+    Statement* debug_statement = read_statement(token_list);
+    debug_statement->write(std::cout);
+    delete debug_statement;
 }

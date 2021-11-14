@@ -61,7 +61,7 @@ class ControlToken : public Token {
 
 class TokenList {
   public:
-    std::vector<std::reference_wrapper<Token>> tokens;
+    std::vector<Token*> tokens;
     size_t index = 0;
 
     inline Token& expect(std::string str) {
@@ -88,9 +88,14 @@ class TokenList {
         return get_token();
     }
 
-    inline Token& get_token() { return tokens.at(index++); }
-    inline Token& peek_token() { return tokens.at(index); }
+    inline Token& get_token() { return *tokens.at(index++); }
+    inline Token& peek_token() { return *tokens.at(index); }
     inline int remaining() { return tokens.size() - index; }
+
+    inline ~TokenList() {
+        for (Token* i : tokens)
+            delete i;
+    }
 };
 
 extern const char COMMENT[];
@@ -103,5 +108,5 @@ extern const char SINGLES[];
 extern const char SYMBOLS[];
 extern const char WHITESPACE[];
 
-Token& read_token(std::ifstream& infile);
+Token* read_token(std::ifstream& infile);
 int strinstrs(std::string& str, const char** strs);

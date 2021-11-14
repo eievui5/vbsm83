@@ -11,25 +11,6 @@
 #include "tokenizer.hpp"
 #include "types.hpp"
 
-// Move these to `label.cpp`
-std::ostream& operator<<(std::ostream& os, Function& function) {
-    os << STORAGE_CLASS[(int) function.storage_class] << ' ' << get_type(function.return_type).str << " [[ ";
-    for (auto& i : function.trait_list) {
-        os << i << ", ";
-    }
-    os << "]] " << function.identifier << "();";
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, Variable& variable) {
-    os << STORAGE_CLASS[(int) variable.storage_class] << ' ' << get_type(variable.variable_type).str << " [[ ";
-    for (auto& i : variable.trait_list) {
-        os << i << ", ";
-    }
-    os << "]] " << variable.identifier << ";";
-    return os;
-}
-
 Function* function_declaration(TokenList& token_list, StorageClass storage_class) {
     Function* declaration = new Function;
     declaration->storage_class = storage_class;
@@ -38,7 +19,7 @@ Function* function_declaration(TokenList& token_list, StorageClass storage_class
     if (return_type.type != TokenType::TYPE)
         fatal("Expected return type after function declaration, got: %s.", return_type.c_str());
 
-    declaration->return_type = (VariableType) get_type_from_str(return_type.string);
+    declaration->variable_type = (VariableType) get_type_from_str(return_type.string);
 
     // Check for and parse the trait list.
     if (token_list.peek_token().string == "[[") {
@@ -62,7 +43,7 @@ Function* function_declaration(TokenList& token_list, StorageClass storage_class
 
     if (enable_info) {
         std::stringstream infostring;
-        infostring << *declaration;
+        declaration->write(infostring);
         info("%s", infostring.str().c_str());
     }
 
@@ -95,7 +76,7 @@ Variable* variable_declaration(TokenList& token_list, StorageClass storage_class
 
     if (enable_info) {
         std::stringstream infostring;
-        infostring << *declaration;
+        declaration->write(infostring);
         info("%s", infostring.str().c_str());
     }
 
@@ -155,6 +136,8 @@ Label* read_storage_class(TokenList& token_list) {
     if ((int) label_declaration->storage_class == -1)
         fatal("Invalid storage class: %s", storage_class.c_str());
 
+    label_declaration->variable_type = (VariableType) get_type_from_str(variable_type.string);
+
     // Store traits.
     if (token_list.peek_token().string == "[[") {
         token_list.index++;
@@ -162,6 +145,22 @@ Label* read_storage_class(TokenList& token_list) {
             label_declaration->trait_list.push_back(token_list.get_token().string);
         }
         token_list.index++;
+    }
+
+    label_declaration->identifier = token_list.expect_type(TokenType::IDENTIFIER).string;
+
+    if (is_function) {
+        token_list.expect("(");
+        while (token_list.get_token().string != ")") {
+            warn("Function arguments are not yet suppoted.");
+        }
+    } else {
+        if (token_list.peek_token().string == "=") {
+            // See docs/output.md for information on how to implement variable init.
+            warn("Variable assignment is not yet supported.");
+        } else {
+            token_list.expect(";");
+        }
     }
 
     return label_declaration;

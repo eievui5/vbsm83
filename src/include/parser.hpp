@@ -11,6 +11,10 @@ enum class StatementType { NONE, FUNCTION, VARIABLE, RETURN };
 class Statement {
   public:
     StatementType type = StatementType::NONE;
+
+    virtual void write(std::ostream& os) = 0;
+
+    virtual ~Statement() = default;
 };
 
 class Return : public Statement {
@@ -23,6 +27,8 @@ class Return : public Statement {
         std::string identifier;
     };
     VariableType return_type;
+
+    ~Return() = default;
 };
 
 class UnitContext {
@@ -37,3 +43,4 @@ class UnitContext {
 };
 
 Statement* begin_declaration(TokenList& token_list);
+Statement* read_statement(TokenList& token_list);

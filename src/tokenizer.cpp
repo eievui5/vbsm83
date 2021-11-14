@@ -37,7 +37,7 @@ void Token::determine_type() {
     // Determine token type.
 
     // Check for comments first
-    if (string.rfind(COMMENT, 0) != -1) {
+    if (string.rfind(COMMENT, 0) != std::string::npos) {
         type = TokenType::COMMENT;
         return;
     }
@@ -98,7 +98,7 @@ void Token::determine_type() {
     type = TokenType::IDENTIFIER;
 }
 
-Token& read_token(std::ifstream& infile) {
+Token* read_token(std::ifstream& infile) {
     Token* token = new Token;
     bool alpha_mode;
 
@@ -106,9 +106,8 @@ Token& read_token(std::ifstream& infile) {
         char next_char = infile.get();
 
         if (next_char == EOF) {
-            if (token->string.length() == 0) {
-                return *token;
-            }
+            if (token->string.length() == 0)
+                return token;
             break;
         }
 
@@ -160,5 +159,5 @@ Token& read_token(std::ifstream& infile) {
         }
     }
 
-    return *token;
+    return token;
 }

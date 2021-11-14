@@ -24,7 +24,9 @@ void put_label(std::ostream& outfile, std::string identifier, StorageClass stora
 }
 
 void compile_function(std::ostream& outfile, Function* func) {
-    outfile << "; " << *func << '\n';
+    outfile << "; ";
+    func->write(outfile);
+    outfile << '\n';
     put_label(outfile, func->identifier, func->storage_class);
 }
 
@@ -37,8 +39,8 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
     switch (ret_token.type) {
     case TokenType::INT: {
         LocalVariable return_variable{
-            get_type(func.return_type).size, get_type(func.return_type).size == 1 ? &c_reg : &bc_reg};
-        return_variable.set_const(outfile, verify_int(std::stoi(ret_token.string), func.return_type));
+            get_type(func.variable_type).size, get_type(func.variable_type).size == 1 ? &c_reg : &bc_reg};
+        return_variable.set_const(outfile, verify_int(std::stoi(ret_token.string), func.variable_type));
     } break;
     case TokenType::IDENTIFIER:
         warn("Identifier returns are not yet supported.");
@@ -55,7 +57,9 @@ void compile_return(std::ostream& outfile, TokenList& token_list, Function& func
 }
 
 void compile_variable(std::ostream& outfile, Variable* var) {
-    outfile << "; " << *var << '\n';
+    outfile << "; ";
+    var->write(outfile);
+    outfile << '\n';
     put_label(outfile, var->identifier, var->storage_class);
     outfile << "\tDS " << get_type(var->variable_type).size << "\n\n";
 }

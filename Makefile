@@ -1,7 +1,7 @@
 BIN := bin/dcc-backend
 OBJS := $(patsubst src/%.cpp, obj/%.o, $(shell find src/ -name '*.cpp'))
 
-CFLAGS := -Isrc/include -std=c++17
+CFLAGS := -Isrc/include -std=c++17 -Wall
 
 all: $(BIN)
 

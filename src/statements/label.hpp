@@ -7,21 +7,25 @@ class Label : public Statement {
     std::string identifier;
     StorageClass storage_class;
     std::vector<std::string> trait_list;
+    VariableType variable_type;
+
+    ~Label() = default;
 };
 
 class Function : public Label {
   public:
-    VariableType return_type;
-
     inline Function() { type = StatementType::FUNCTION; }
+
+    void write(std::ostream& os);
+
+    ~Function() = default;
 };
 
 class Variable : public Label {
   public:
-    VariableType variable_type;
-
     inline Variable() { type = StatementType::VARIABLE; }
-};
 
-std::ostream& operator<<(std::ostream& os, Function& function);
-std::ostream& operator<<(std::ostream& os, Variable& variable);
+    void write(std::ostream& os);
+
+    ~Variable() = default;
+};
