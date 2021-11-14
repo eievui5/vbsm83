@@ -4,6 +4,7 @@
 #include <memory>
 #include <vector>
 
+#include "analysis.hpp"
 #include "compile.hpp"
 #include "exception.hpp"
 #include "parser.hpp"
@@ -70,5 +71,6 @@ int main(int argc, char* argv[]) {
 
     UnitContext root_context;
     parse_token_list(root_context, token_list);
+    analyze_unit(root_context);
     compile(root_context, output_file);
 }
