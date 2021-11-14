@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "exception.hpp"
-#include "gbcomp.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
 #include "tokenizer.hpp"
