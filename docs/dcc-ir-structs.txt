@@ -1,0 +1,74 @@
+// Consider the following C program:
+struct entry {
+	char* name;
+	int value;
+}
+
+char* search(struct entry* entries, int i) {
+	while (entries->name != NULL) {
+		if (entries->value == i) {
+			return entries->name;
+		}
+		entries += sizeof(entry);
+	}
+	return NULL;
+}
+
+// DCC IR:
+struct entry {
+	p name : 0 + 0p;
+	i16 value : 0 + 1p;
+}
+
+export fn p search(p entries, i16 i) {
+  @start:
+	p %temp0 = @PHI(@start, entries, @endif, %temp6);
+	p %temp1 = %temp0 + @OFFSET(entry.name);
+	p %temp2 = * %temp1;
+	jmp == 0, @break;
+  @while:
+	p %temp3 = %temp0 + @OFFSET(entry.value);
+	i16 %temp4 = * %temp3;
+	i16 %temp5 = %temp4 - i;
+	jmp != 0, @endif;
+	jmp break;
+  @endif:
+  	p %temp6 = %temp0 + @SIZE(entry);
+    jmp @start;
+  @break:
+  	p %temp7 = @PHI(@start, 0, @while, %temp2);
+  	return %temp7;
+}
+
+// Assembly output.
+_search::
+	// @bc: entries
+	// @de: i
+	ld h, b
+	ld l, c
+.while
+	ld a, [hli]
+	or a, [hl]
+	jr z, .break
+	
+	inc hl
+	ld a, [hli]
+	ld c, a
+	ld a, [hli]
+	cp a, d
+	jr nz, .while
+	ld a, c
+	cp a, e
+	jr nz, .while
+
+	dec hl
+	dec hl
+	dec hl
+	ld a, [hld]
+	ld c, [hl]
+	ld b, a
+	ret	
+	
+.break
+	ld bc, 0
+	ret
