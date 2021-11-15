@@ -1,0 +1,39 @@
+// Consider the following C program:
+uint8_t a(uint8_t* ptr, uint16_t i) { return ptr[12 + i]; }
+
+// Pointers, p, are *not* given a type. The type is inferred when they are
+// dereferenced.
+static fn u8 a(p ptr, u16 i) {
+	// Indexing is simply math, and follows SSA rules.
+	p %temp0 = ptr + 12;
+	p %temp1 = %temp0 + i;
+	// I found very little info about pointers in the IR docs, so I'm just
+	// assuming that '*' is used to dereference.
+	// Since pointers have no type, this infers that the pointer contains
+	// an unsigned 8-bit integer, since that's the return value!
+	return * %temp1;
+}
+
+// Here's what this program might produce:
+__a:
+	// I want to output a register map for function inputs, to make it
+	// easier for assembly programmers to use our output.
+	// @bc: p ptr
+	// @de: u16 i
+
+	// %temp0 = ptr + 12
+	// hl = bc + 12
+	ld a, 12
+	add a, c
+	ld l, a
+	adc a, b
+	sub a, l
+	ld h, a
+
+	// %temp1 = %temp0 + i
+	// hl = hl + de
+	add hl, de
+
+	// return * %temp1
+	ld c, [hl]
+	ret
