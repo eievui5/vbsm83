@@ -28,18 +28,11 @@ void read_local_var(UnitContext& unit_block, TokenList& token_list) {
     declaration->variable_type = (VariableType) get_type_from_str(token_list.get_token().string);
     declaration->identifier = token_list.get_token().string;
 
-    unit_block.append(declaration);
+    token_list.expect("=");
+    declaration->value = token_list.get_token().string;
+    token_list.expect(";");
 
-    if (token_list.peek_token().string == "=") {
-        token_list.index++;
-        LocalVarAssignment* assignment = new LocalVarAssignment;
-        assignment->identifier = declaration->identifier;
-        assignment->value = token_list.get_token().string;
-        token_list.expect(";");
-        unit_block.append(assignment);
-    } else {
-        token_list.expect(";");
-    }
+    unit_block.append(declaration);
 }
 
 void parse_function_block(Function& function, TokenList& token_list) {
@@ -56,20 +49,6 @@ void parse_function_block(Function& function, TokenList& token_list) {
                 function.unit_block.append(return_statement);
             } else {
                 warn("Unhandled keyword \"%s\".", token_list.peek_token().c_str());
-            }
-            break;
-        case TokenType::IDENTIFIER:
-            // Identifiers are vague, so we need to do an additional check on them.
-            if (token_list.peek_token(1).string == "=") {
-                // This is quite short so I don't need a function for this case.
-                LocalVarAssignment* assignment = new LocalVarAssignment;
-                assignment->identifier = token_list.get_token().string;
-                token_list.expect("=");
-                assignment->value = token_list.get_token().string;
-                token_list.expect(";");
-                function.unit_block.append(assignment);
-            } else {
-                warn("Unhandled identifier \"%s\".", token_list.peek_token().c_str());
             }
             break;
         case TokenType::TYPE:

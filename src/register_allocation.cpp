@@ -1,7 +1,9 @@
 #include <vector>
 
 #include "exception.hpp"
+#include "parser.hpp"
 #include "register_allocation.hpp"
+#include "statements/local_var.hpp"
 
 // Forward-declare 16-bit regs.
 
@@ -28,13 +30,14 @@ const CPUReg hl_reg = {"hl", 2, nullptr, hl_children};
 const CPUReg* short_regs[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, nullptr};
 const CPUReg* wide_regs[] = {&bc_reg, &de_reg, &hl_reg, nullptr};
 
-LocalVariable::LocalVariable(std::unordered_map<std::string, LocalVariable*>& local_vars, int size) : size(size) {
+const CPUReg* allocate_register(std::unordered_map<std::string, LocalVariable*>& local_vars, int size) {
     const CPUReg** reg_pool = nullptr;
 
     // Determine which register pool to use for this size.
     if (size == 1) {
         reg_pool = short_regs;
     } else if (size == 2) { // or size == 4) {
+        warn("16-bit integers are not yet properly supported.");
         reg_pool = wide_regs;
     }
 
@@ -57,9 +60,8 @@ LocalVariable::LocalVariable(std::unordered_map<std::string, LocalVariable*>& lo
 
             // If we make it here, a valid register was found. Give it to the
             // local var and exit.
-            container = *reg_pool;
-            info("Selected register %s for %i-byte value.", container->name.c_str(), size);
-            return;
+            info("Selected register %s for %i-byte value.", (*reg_pool)->name.c_str(), size);
+            return *reg_pool;
         next_reg:
             reg_pool++;
         }
@@ -69,5 +71,16 @@ LocalVariable::LocalVariable(std::unordered_map<std::string, LocalVariable*>& lo
     // However, I don't wanna write this logic right now. Let's just error out
     // for now.
     fatal("Ran out of registers for size of %i. Stack variables are not yet supported.", size);
-    return;
+    return nullptr;
+}
+
+void allocate_locals(FunctionContext& func_context) {
+    for (auto* i : func_context.statements) {
+        LocalVarDeclaration* declaration = dynamic_cast<LocalVarDeclaration*>(i);
+        if (!declaration)
+            continue;
+        LocalVariable* local_var = new LocalVariable;
+        local_var->container = allocate_register(func_context.local_vars, get_type(declaration->variable_type).size);
+        func_context.local_vars[declaration->identifier] = local_var;
+    }
 }

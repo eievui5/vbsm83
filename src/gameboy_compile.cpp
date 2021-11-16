@@ -1,5 +1,6 @@
 #include <ostream>
 
+#include "register_allocation.hpp"
 #include "statements/label.hpp"
 #include "statements/local_var.hpp"
 #include "statements/return.hpp"
@@ -42,6 +43,8 @@ void Variable::define(std::ostream& outfile) {
 
 void Function::define(std::ostream& outfile) {
     Label::define(outfile);
+    // Locals MUST be allocated to compile a function.
+    allocate_locals(unit_block);
     for (auto* i : unit_block.statements) {
         FuncStatement* func = dynamic_cast<FuncStatement*>(i);
         if (!func)
@@ -51,11 +54,7 @@ void Function::define(std::ostream& outfile) {
 }
 
 void LocalVarDeclaration::compile(std::ostream& outfile, FunctionContext& context) {
-    outfile << "\t; " << get_type(variable_type).str << ' ' << identifier << '\n';
-}
-
-void LocalVarAssignment::compile(std::ostream& outfile, FunctionContext& context) {
-    outfile << "\t; " << identifier << " = " << value << '\n';
+    outfile << "\t; " << get_type(variable_type).str << ' ' << identifier << " = " << value << '\n';
     context.local_vars[identifier]->assign(outfile, context, identifier, value);
 }
 

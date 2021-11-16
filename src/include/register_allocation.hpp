@@ -22,11 +22,9 @@ class LocalVariable {
   public:
     // Which register is this variable stored in?
     const CPUReg* container;
-    const int size;
+    int size;
 
     void assign(std::ostream& outfile, FunctionContext& context, std::string identifier, std::string value);
-
-    LocalVariable(std::unordered_map<std::string, LocalVariable*>& local_vars, int size);
 };
 
 extern const CPUReg a_reg;
@@ -39,3 +37,5 @@ extern const CPUReg h_reg;
 extern const CPUReg bc_reg;
 extern const CPUReg de_reg;
 extern const CPUReg hl_reg;
+
+void allocate_locals(FunctionContext& func_context);
