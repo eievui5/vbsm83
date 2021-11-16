@@ -10,28 +10,7 @@
 #include "tokenizer.hpp"
 #include "types.hpp"
 
-class Statement;
-
-class UnitContext {
-  public:
-    std::vector<Statement*> statements;
-
-    inline void append(Statement* statement) { statements.push_back(statement); }
-
-    ~UnitContext();
-};
-
-class FunctionContext : public UnitContext {
-  public:
-    std::unordered_map<std::string, LocalVariable*> local_vars;
-    VariableType return_type;
-
-    ~FunctionContext() {
-        for (auto& i : local_vars) {
-            delete i.second;
-        }
-    }
-};
+class FunctionContext;
 
 // Statement types are deprecated, please do not use.
 enum class StatementType { NONE, FUNCTION, VARIABLE, RETURN };
@@ -48,6 +27,32 @@ class FuncStatement : public Statement {
     virtual void compile(std::ostream& outfile, FunctionContext& context) = 0;
 
     void define(std::ostream& outfile) { fatal("Function statments may only be compiled, not defined."); }
+};
+
+class LocalVar : public FuncStatement {
+  public:
+    const CPUReg* container;
+    std::string identifier;
+    std::string value;
+    VariableType variable_type;
+    int size;
+
+    void compile(std::ostream& outfile, FunctionContext& context);
+};
+
+class UnitContext {
+  public:
+    std::vector<Statement*> statements;
+
+    inline void append(Statement* statement) { statements.push_back(statement); }
+
+    ~UnitContext();
+};
+
+class FunctionContext : public UnitContext {
+  public:
+    std::unordered_map<std::string, LocalVar*> local_vars;
+    VariableType return_type;
 };
 
 Statement* begin_declaration(TokenList& token_list);

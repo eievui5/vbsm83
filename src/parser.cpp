@@ -8,7 +8,6 @@
 #include "exception.hpp"
 #include "parser.hpp"
 #include "statements/label.hpp"
-#include "statements/local_var.hpp"
 #include "statements/return.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
@@ -22,8 +21,8 @@ UnitContext::~UnitContext() {
 /* Read a local variable off the token list.
 Potentially adds an assignment as well, if the variable is initialized.
 */
-void read_local_var(UnitContext& unit_block, TokenList& token_list) {
-    LocalVarDeclaration* declaration = new LocalVarDeclaration;
+void read_local_var(FunctionContext& unit_block, TokenList& token_list) {
+    LocalVar* declaration = new LocalVar;
 
     declaration->variable_type = (VariableType) get_type_from_str(token_list.get_token().string);
     declaration->identifier = token_list.get_token().string;

@@ -3,7 +3,6 @@
 #include "exception.hpp"
 #include "parser.hpp"
 #include "register_allocation.hpp"
-#include "statements/local_var.hpp"
 
 // Forward-declare 16-bit regs.
 
@@ -30,7 +29,7 @@ const CPUReg hl_reg = {"hl", 2, nullptr, hl_children};
 const CPUReg* short_regs[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, nullptr};
 const CPUReg* wide_regs[] = {&bc_reg, &de_reg, &hl_reg, nullptr};
 
-const CPUReg* allocate_register(std::unordered_map<std::string, LocalVariable*>& local_vars, int size) {
+const CPUReg* allocate_register(std::unordered_map<std::string, LocalVar*>& local_vars, int size) {
     const CPUReg** reg_pool = nullptr;
 
     // Determine which register pool to use for this size.
@@ -72,15 +71,4 @@ const CPUReg* allocate_register(std::unordered_map<std::string, LocalVariable*>&
     // for now.
     fatal("Ran out of registers for size of %i. Stack variables are not yet supported.", size);
     return nullptr;
-}
-
-void allocate_locals(FunctionContext& func_context) {
-    for (auto* i : func_context.statements) {
-        LocalVarDeclaration* declaration = dynamic_cast<LocalVarDeclaration*>(i);
-        if (!declaration)
-            continue;
-        LocalVariable* local_var = new LocalVariable;
-        local_var->container = allocate_register(func_context.local_vars, get_type(declaration->variable_type).size);
-        func_context.local_vars[declaration->identifier] = local_var;
-    }
 }

@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-class FunctionContext;
+class LocalVar;
 
 struct CPUReg {
     // The symbol used to identify the register; how it appears in the output code.
@@ -16,15 +16,6 @@ struct CPUReg {
     const CPUReg* parent;
     // Registers that this register contains.
     const CPUReg** children;
-};
-
-class LocalVariable {
-  public:
-    // Which register is this variable stored in?
-    const CPUReg* container;
-    int size;
-
-    void assign(std::ostream& outfile, FunctionContext& context, std::string identifier, std::string value);
 };
 
 extern const CPUReg a_reg;
@@ -38,4 +29,4 @@ extern const CPUReg bc_reg;
 extern const CPUReg de_reg;
 extern const CPUReg hl_reg;
 
-void allocate_locals(FunctionContext& func_context);
+const CPUReg* allocate_register(std::unordered_map<std::string, LocalVar*>& local_vars, int size);

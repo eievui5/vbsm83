@@ -12,8 +12,6 @@
 #include "tokenizer.hpp"
 #include "types.hpp"
 
-constexpr int MAX_COMMENT = 80;
-
 const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
 const char* KEYWORDS[] = {"fn", "var", "return", nullptr};

@@ -2,19 +2,9 @@
 
 #include "register_allocation.hpp"
 #include "statements/label.hpp"
-#include "statements/local_var.hpp"
 #include "statements/return.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
-
-void LocalVariable::assign(std::ostream& outfile, FunctionContext& context, std::string identifier, std::string value) {
-    if (determine_token_type(value) == TokenType::INT) {
-        outfile << "\tld " << context.local_vars[identifier]->container->name << ", " << value << '\n';
-    } else {
-        outfile << "\tld " << context.local_vars[identifier]->container->name << ", "
-                << context.local_vars[value]->container->name << '\n';
-    }
-}
 
 void Label::define(std::ostream& outfile) {
     // Output an info comment.
@@ -43,8 +33,6 @@ void Variable::define(std::ostream& outfile) {
 
 void Function::define(std::ostream& outfile) {
     Label::define(outfile);
-    // Locals MUST be allocated to compile a function.
-    allocate_locals(unit_block);
     for (auto* i : unit_block.statements) {
         FuncStatement* func = dynamic_cast<FuncStatement*>(i);
         if (!func)
@@ -53,9 +41,14 @@ void Function::define(std::ostream& outfile) {
     }
 }
 
-void LocalVarDeclaration::compile(std::ostream& outfile, FunctionContext& context) {
+void LocalVar::compile(std::ostream& outfile, FunctionContext& context) {
     outfile << "\t; " << get_type(variable_type).str << ' ' << identifier << " = " << value << '\n';
-    context.local_vars[identifier]->assign(outfile, context, identifier, value);
+    if (determine_token_type(value) == TokenType::INT) {
+        outfile << "\tld " << context.local_vars[identifier]->container->name << ", " << value << '\n';
+    } else {
+        outfile << "\tld " << context.local_vars[identifier]->container->name << ", "
+                << context.local_vars[value]->container->name << '\n';
+    }
 }
 
 void ReturnStatement::compile(std::ostream& outfile, FunctionContext& context) {
