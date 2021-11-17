@@ -47,12 +47,14 @@ const CPUReg* allocate_register(std::unordered_map<std::string, LocalVar*>& loca
             for (auto& i : local_vars) {
                 // If any matches are found, check the next register.
                 const CPUReg* target_reg = *reg_pool;
-                if (i.second->container == *reg_pool or i.second->container == target_reg->parent)
-                    goto next_reg;
-                if (target_reg->children != nullptr) {
-                    for (int j = 0; target_reg->children[j] != nullptr; j++) {
-                        if (target_reg->children[j] == i.second->container)
-                            goto next_reg;
+                if (i.second->container) {
+                    if (i.second->container == *reg_pool or i.second->container == target_reg->parent)
+                        goto next_reg;
+                    if (target_reg->children != nullptr) {
+                        for (int j = 0; target_reg->children[j] != nullptr; j++) {
+                            if (target_reg->children[j] == i.second->container)
+                                goto next_reg;
+                        }
                     }
                 }
             }

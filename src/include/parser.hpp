@@ -36,8 +36,12 @@ class LocalVar : public FuncStatement {
     std::string value;
     VariableType variable_type;
     int size;
+    // How many times is the variable referenced after its assignment?
+    int use_count;
+    bool is_returned;
 
     void compile(std::ostream& outfile, FunctionContext& context);
+    void print_info(std::ostream& out);
 };
 
 class UnitContext {

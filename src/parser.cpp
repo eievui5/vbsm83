@@ -18,6 +18,17 @@ UnitContext::~UnitContext() {
     }
 }
 
+void LocalVar::print_info(std::ostream& out) {
+    out << get_type(variable_type).str << ' ' << identifier << "; ";
+    out << "Used " << use_count << " time";
+    if (use_count != 1)
+        out << 's';
+    out<< ". ";
+    if (is_returned)
+        out << "Is returned. ";
+    out << '\n';
+}
+
 /* Read a local variable off the token list.
 Potentially adds an assignment as well, if the variable is initialized.
 */
@@ -31,6 +42,7 @@ void read_local_var(FunctionContext& unit_block, TokenList& token_list) {
     declaration->value = token_list.get_token().string;
     token_list.expect(";");
 
+    unit_block.local_vars[declaration->identifier] = declaration;
     unit_block.append(declaration);
 }
 
