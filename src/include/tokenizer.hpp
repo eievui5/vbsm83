@@ -78,25 +78,25 @@ class TokenList {
     std::vector<Token*> tokens;
     size_t index = 0;
 
-    inline Token& expect(std::string str) {
+    Token& expect(std::string str) {
         if (peek_token().string != str)
             fatal("Expected %s, got %s.", str.c_str(), peek_token().c_str());
         return get_token();
     }
 
-    inline Token& expect(std::string str, const char* message) {
+    Token& expect(std::string str, const char* message) {
         if (peek_token().string != str)
             fatal(message);
         return get_token();
     }
 
-    inline Token& expect_type(TokenType type) {
+    Token& expect_type(TokenType type) {
         if (peek_token().type != type)
             fatal("Unexpected token %s.");
         return get_token();
     }
 
-    inline Token& expect_type(TokenType type, const char* message) {
+    Token& expect_type(TokenType type, const char* message) {
         if (peek_token().type != type)
             fatal(message);
         return get_token();
@@ -108,13 +108,13 @@ class TokenList {
         }
     }
 
-    inline void seek(int _index) { index = _index; }
-    inline Token& get_token() { return *tokens.at(index++); }
-    inline Token& peek_token() { return *tokens.at(index); }
-    inline Token& peek_token(int lookahead) { return *tokens.at(index + lookahead); }
-    inline int remaining() { return tokens.size() - index; }
+    void seek(int _index) { index = _index; }
+    Token& get_token() { return *tokens.at(index++); }
+    Token& peek_token() { return *tokens.at(index); }
+    Token& peek_token(int lookahead) { return *tokens.at(index + lookahead); }
+    int remaining() { return tokens.size() - index; }
 
-    inline ~TokenList() {
+    ~TokenList() {
         for (Token* i : tokens)
             delete i;
     }

@@ -12,11 +12,11 @@ class File {
 
     operator FILE*() { return file; }
 
-    inline bool eof() { return feof(file); }
-    inline char getc() { return fgetc(file); }
-    inline void open(char* path, const char* flags) { file = fopen(path, flags); }
+    bool eof() { return feof(file); }
+    char getc() { return fgetc(file); }
+    void open(char* path, const char* flags) { file = fopen(path, flags); }
 
-    inline void printf(char* fmt, ...) {
+    void printf(char* fmt, ...) {
         va_list ap;
 
         va_start(ap, fmt);
