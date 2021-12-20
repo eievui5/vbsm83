@@ -1,9 +1,9 @@
-#include <cctype>
-#include <cstring>
+#include <ctype.h>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string.h>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -12,14 +12,16 @@
 #include "tokenizer.hpp"
 #include "types.hpp"
 
-const char COMMENT[] = "//";
 const char BRACKETS[] = "()[]{}";
 const char* KEYWORDS[] = {"fn", "var", "return", nullptr};
 const char* STORAGE_CLASS[] = {"extern", "export", "static", nullptr};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "-0123456789";
-const char* OPERATORS[] = {"!",  "-",   "*",  "&",  "~", "+", "/",  "&",  "|",  "^",  "&&",
-                           "||", "mod", "<<", ">>", "<", ">", "<=", ">=", "!=", "==", nullptr};
+const char* BIN_OPS[] = {
+    "+", "-", "*", "/", "mod", "&", "|", "^", "&&", "||", "<<", ">>", "<", ">",
+    "<=", ">=", "!=", "==", nullptr
+};
+const char* UN_OPS[] = {"!", "-", "~", nullptr};
 const char SINGLES[] = "(){},;";
 const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
 
@@ -33,11 +35,6 @@ int strinstrs(std::string& str, const char** strs) {
 
 TokenType determine_token_type(std::string string) {
     // Determine token type.
-
-    // Check for comments first
-    if (string.rfind(COMMENT, 0) != std::string::npos) {
-        return TokenType::COMMENT;
-    }
 
     // Collect single-char tokens.
     if (string.length() == 1) {
@@ -66,8 +63,12 @@ TokenType determine_token_type(std::string string) {
     }
 
     // Then operators...
-    if (strinstrs(string, OPERATORS) >= 0) {
-        return TokenType::OPERATOR;
+    if (strinstrs(string, BIN_OPS) >= 0) {
+        return TokenType::BINARY_OPERATOR;
+    }
+
+    if (strinstrs(string, UN_OPS) >= 0) {
+        return TokenType::UNARY_OPERATOR;
     }
 
     // Types...
@@ -83,11 +84,7 @@ TokenType determine_token_type(std::string string) {
     return TokenType::IDENTIFIER;
 }
 
-void Token::determine_type() {
-    type = determine_token_type(string);
-}
-
-Token* read_token(std::ifstream& infile) {
+Token* read_token(std::istream& infile) {
     Token* token = new Token;
     bool alpha_mode;
 
@@ -102,7 +99,7 @@ Token* read_token(std::ifstream& infile) {
 
         if (token->string.length() == 0) {
             // Ignore leading whitespace.
-            if (std::isspace(next_char))
+            if (isspace(next_char))
                 continue;
 
             // Now check for single-char tokens, such as BRACKETS, ",", and ";".
@@ -124,7 +121,7 @@ Token* read_token(std::ifstream& infile) {
         }
 
         // Whitespace delimits all tokens.
-        if (std::isspace(next_char))
+        if (isspace(next_char))
             break;
 
         if ((strchr(SYMBOLS, next_char) == NULL) == alpha_mode) {
@@ -137,16 +134,6 @@ Token* read_token(std::ifstream& infile) {
     }
 
     token->determine_type();
-
-    if (token->type == TokenType::COMMENT) {
-        // Skip the rest of the line when a comment appears.
-        while (1) {
-            char next_char = infile.get();
-
-            if (next_char == '\n' or next_char == EOF)
-                break;
-        }
-    }
 
     return token;
 }

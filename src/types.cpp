@@ -20,7 +20,7 @@ const BackendType TYPES[] = {
     {nullptr  }
 };
 
-template <typename T> T _verify(int num, VariableType type) {
+template <typename T> static T verify(int num, VariableType type) {
     if ((T) num != num) {
         warn("%i does not fit within a %s. Truncating value to %i.", num, get_type(type).str, (T) num);
     }
@@ -30,13 +30,13 @@ template <typename T> T _verify(int num, VariableType type) {
 int verify_int(int num, VariableType type) {
     switch (type) {
     case VariableType::U8:
-        return _verify<uint8_t>(num, type);
+        return verify<uint8_t>(num, type);
     case VariableType::U16:
-        return _verify<uint16_t>(num, type);
+        return verify<uint16_t>(num, type);
     case VariableType::I8:
-        return _verify<int8_t>(num, type);
+        return verify<int8_t>(num, type);
     case VariableType::I16:
-        return _verify<int16_t>(num, type);
+        return verify<int16_t>(num, type);
 
     default:
         warn("Unhandled variable type: %s", get_type(type).str);

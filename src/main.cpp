@@ -4,12 +4,13 @@
 #include <memory>
 #include <vector>
 
-#include "analysis.hpp"
-#include "compile.hpp"
 #include "exception.hpp"
-#include "parser.hpp"
+#include "preprocessor.hpp"
 #include "register_allocation.hpp"
+#include "statements.hpp"
 #include "tokenizer.hpp"
+
+using std::cout;
 
 static struct option const longopts[] = {
     {  "input", required_argument, NULL, 'i'},
@@ -52,25 +53,29 @@ int main(int argc, char* argv[]) {
     if (error_count > 0)
         fatal("CLI failed with %u errors.\n", error_count);
 
+    // Process input.
+    std::stringstream processed_infile = preprocess(input_file);
     TokenList token_list;
 
-    while (!input_file.eof()) {
-        Token* token = read_token(input_file);
-        if (token->type == TokenType::NONE or token->type == TokenType::COMMENT) {
+    while (!processed_infile.eof()) {
+        Token* token = read_token(processed_infile);
+        if (token->type == TokenType::NONE) {
             delete token;
             continue;
         }
         token_list.tokens.push_back(token);
     }
 
-    if (info()) {
-        for (Token* i : token_list.tokens)
-            std::cout << i->string << ", ";
-        std::cout << '\n';
+    // Output debug info.
+    cout << "Pre-processed infile:\n";
+    cout << processed_infile.str();
+    cout << "Token list:\n";
+    token_list.print(cout);
+    cout << "\n\n";
+    auto statements = parse_statements(token_list);
+    cout << "Recognized statements:\n";
+    for (auto& i : statements) {
+        i.print(cout);
+        cout << '\n';
     }
-
-    UnitContext root_context;
-    parse_token_list(root_context, token_list);
-    analyze_unit(root_context);
-    compile(root_context, output_file);
 }
