@@ -14,8 +14,11 @@ rebuild:
 	$(MAKE) all
 
 test: all
-	@echo " === BEGINNING TEST! ==="
+	@echo "	=== BEGINNING TEST! ==="
 	./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
+
+memcheck: all
+	valgrind ./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
 
 # Compile each .c file.
 obj/%.o: src/%.cpp
