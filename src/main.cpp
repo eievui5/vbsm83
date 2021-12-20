@@ -78,12 +78,4 @@ int main(int argc, char* argv[]) {
         i.print(cout);
         cout << '\n';
     }
-<<<<<<< HEAD
-=======
-
-    UnitContext root_context;
-    parse_token_list(root_context, token_list);
-    analyze_unit(root_context);
-    //compile(root_context, output_file);
->>>>>>> ec6eda6a8b8e2b4c4e8ca8e665f1833bbb29fbbb
 }
