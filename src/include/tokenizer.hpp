@@ -25,7 +25,6 @@ enum class TokenType {
     FLOAT,
     KEYWORD,
     STORAGE_CLASS,
-    CONTROL,
 };
 
 enum class BinOpType {
@@ -49,7 +48,7 @@ enum class BinOpType {
     EQU,
 };
 
-TokenType determine_token_type(std::string string);
+TokenType determine_token_type(const std::string& string);
 
 class Token {
   public:
@@ -59,18 +58,7 @@ class Token {
     const char* c_str() { return string.c_str(); }
     void determine_type() { type = determine_token_type(string); }
     int64_t read_int() { return strtoll(c_str(), NULL, 0); }
-    uint64_t read_uint() { return strtoll(c_str(), NULL, 0); }
-};
-
-/* Control class for handling optimizations done by analysis.
-Provides a compile function which handles output based on the current context,
-allowing simple, encapsulated handling of special tokens.
-*/
-class ControlToken : public Token {
-  public:
-    ControlToken() { type = TokenType::CONTROL; }
-
-    virtual void compile(std::ostream& outfile, TokenList& token_list);
+    uint64_t read_uint() { return strtoull(c_str(), NULL, 0); }
 };
 
 class TokenList {
@@ -78,40 +66,13 @@ class TokenList {
     std::vector<Token*> tokens;
     size_t index = 0;
 
-    Token& expect(std::string str) {
-        if (peek_token().string != str)
-            fatal("Expected %s, got %s.", str.c_str(), peek_token().c_str());
-        return get_token();
-    }
-
-    Token& expect(std::string str, const char* message) {
-        if (peek_token().string != str)
-            fatal(message);
-        return get_token();
-    }
-
-    Token& expect_type(TokenType type) {
-        if (peek_token().type != type)
-            fatal("Unexpected token %s.");
-        return get_token();
-    }
-
-    Token& expect_type(TokenType type, const char* message) {
-        if (peek_token().type != type)
-            fatal(message);
-        return get_token();
-    }
-
     void print(std::ostream& outfile) {
-        for (Token* i : tokens) {
-            outfile << i->c_str() << ", ";
-        }
+        for (Token* i : tokens)
+            outfile << i->string << ", ";
     }
 
     void seek(int _index) { index = _index; }
     Token& get_token() { return *tokens.at(index++); }
-    Token& peek_token() { return *tokens.at(index); }
-    Token& peek_token(int lookahead) { return *tokens.at(index + lookahead); }
     int remaining() { return tokens.size() - index; }
 
     ~TokenList() {
@@ -131,4 +92,4 @@ extern const char SYMBOLS[];
 extern const char WHITESPACE[];
 
 Token* read_token(std::istream& infile);
-int strinstrs(std::string& str, const char** strs);
+int strinstrs(const std::string& str, const char** strs);

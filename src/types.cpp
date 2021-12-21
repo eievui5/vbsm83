@@ -17,7 +17,7 @@ const BackendType TYPES[] = {
     {    "p", 2},
     { "farp", 4},
     { "void", 0},
-    {nullptr  }
+    {nullptr}
 };
 
 template <typename T> static T verify(int num, VariableType type) {

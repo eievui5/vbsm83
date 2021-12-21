@@ -25,6 +25,6 @@ struct BackendType {
 
 extern const BackendType TYPES[];
 
-int get_type_from_str(std::string str);
+int get_type_from_str(const std::string& str);
 const BackendType& get_type(VariableType type);
 int verify_int(int num, VariableType type);

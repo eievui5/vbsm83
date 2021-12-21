@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     cout << "Token list:\n";
     token_list.print(cout);
     cout << "\n\n";
-    auto statements = parse_statements(token_list);
+    StatementList statements = parse_statements(token_list);
     cout << "Recognized statements:\n";
     for (auto& i : statements) {
         i.print(cout);

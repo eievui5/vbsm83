@@ -19,7 +19,9 @@ namespace stmnt {
 
     class Variable : public Statement {
     public:
+        // How the variable is stored.
         StorageClass storage_class;
+        // Frontend-supplied strings; can be ignored if not recognized.
         std::vector<std::string> traits;
         VariableType type;
         std::string identifier;
@@ -27,7 +29,9 @@ namespace stmnt {
 
     class Function : public Variable {
     public:
+        // How the function is stored.
         StorageClass storage_class;
+        // Frontend-supplied strings; can be ignored if not recognized.
         std::vector<std::string> traits;
         VariableType type;
         std::string identifier;
@@ -36,29 +40,33 @@ namespace stmnt {
     class Assignment : public Statement {
     public:
         std::string dest;
+        // `source` is either a variable or a constant.
         std::string source;
     };
 
     class BinOp : public Statement {
     public:
-        BinOpType type; // Which operation is being performed?
-        bool is_const; // Is the rhs constant?
+        // The operation being performed.
+        BinOpType type;
+        // True if the `rhs` is constant.
+        bool is_const;
         VariableType dest_type;
-        std::string dest; // The name of the variable for storing the result.
-        std::string lhs; // This is always a variable.
-        std::string rhs; // Either a constant or a variable
+        std::string dest;
+        // `lhs` is always a variable.
+        std::string lhs;
+        // `rhs` is either a variable or a constant.
+        std::string rhs;
     };
 
     class Return : public Statement {
     public:
+        // True if `source` is constant.
         bool is_const;
         std::string source;
     };
 };
 
-class StatementList {
-    std::vector<stmnt::Statement*> statements;
-};
+typedef std::vector<stmnt::Statement> StatementList;
 
 std::vector<std::vector<Token*>> collect_statements(TokenList& token_list);
-std::vector<stmnt::Statement> parse_statements(TokenList& token_list);
+StatementList parse_statements(TokenList& token_list);

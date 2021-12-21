@@ -20,7 +20,7 @@ test: all
 memcheck: all
 	valgrind ./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
 
-# Compile each .c file.
+# Compile each source file.
 obj/%.o: src/%.cpp
 	@mkdir -p $(@D)
 	g++ $(CFLAGS) -c -o $@ $<

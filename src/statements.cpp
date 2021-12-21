@@ -21,7 +21,7 @@ vector<vector<Token*>> collect_statements(TokenList& token_list) {
     return out_matrix;
 }
 
-vector<stmnt::Statement> parse_statements(TokenList& token_list) {
+StatementList parse_statements(TokenList& token_list) {
     vector<stmnt::Statement> outlist;
     auto statement_tokens = collect_statements(token_list);
     for (auto& i : statement_tokens) {

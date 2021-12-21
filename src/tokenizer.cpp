@@ -1,14 +1,9 @@
 #include <ctype.h>
-#include <fstream>
 #include <iostream>
-#include <memory>
 #include <string>
 #include <string.h>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "exception.hpp"
-#include "file.hpp"
 #include "tokenizer.hpp"
 #include "types.hpp"
 
@@ -25,7 +20,7 @@ const char* UN_OPS[] = {"!", "-", "~", nullptr};
 const char SINGLES[] = "(){},;";
 const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
 
-int strinstrs(std::string& str, const char** strs) {
+int strinstrs(const std::string& str, const char** strs) {
     for (int i = 0; strs[i] != nullptr; i++) {
         if (str == strs[i])
             return i;
@@ -33,53 +28,39 @@ int strinstrs(std::string& str, const char** strs) {
     return -1;
 }
 
-TokenType determine_token_type(std::string string) {
+TokenType determine_token_type(const std::string& string) {
     // Determine token type.
 
     // Collect single-char tokens.
     if (string.length() == 1) {
-        if (string[0] == ',') {
+        if (string[0] == ',')
             return TokenType::COMMA;
-        }
-        if (string[0] == ';') {
+        if (string[0] == ';')
             return TokenType::SEMICOLON;
-        }
 
-        if (strchr(BRACKETS, string[0])) {
+        if (strchr(BRACKETS, string[0]))
             return TokenType::BRACKET;
-        }
     }
 
     // Parse the various types of keywords.
 
     // Declaration storage_class.
-    if (strinstrs(string, STORAGE_CLASS) != -1) {
+    if (strinstrs(string, STORAGE_CLASS) != -1)
         return TokenType::STORAGE_CLASS;
-    }
-
     // Other keywords.
-    if (strinstrs(string, KEYWORDS) != -1) {
+    if (strinstrs(string, KEYWORDS) != -1)
         return TokenType::KEYWORD;
-    }
-
     // Then operators...
-    if (strinstrs(string, BIN_OPS) >= 0) {
+    if (strinstrs(string, BIN_OPS) >= 0)
         return TokenType::BINARY_OPERATOR;
-    }
-
-    if (strinstrs(string, UN_OPS) >= 0) {
+    if (strinstrs(string, UN_OPS) >= 0)
         return TokenType::UNARY_OPERATOR;
-    }
-
     // Types...
-    if (get_type_from_str(string) != -1) {
+    if (get_type_from_str(string) != -1)
         return TokenType::TYPE;
-    }
-
     // Number constants.
-    if (strchr(NUMBERS, string[0])) {
+    if (strchr(NUMBERS, string[0]))
         return TokenType::INT;
-    }
 
     return TokenType::IDENTIFIER;
 }
