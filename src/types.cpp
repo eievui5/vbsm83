@@ -44,7 +44,7 @@ int verify_int(int num, VariableType type) {
     }
 }
 
-int get_type_from_str(std::string str) {
+int get_type_from_str(const std::string& str) {
     for (int i = 0; TYPES[i].str != nullptr; i++) {
         if (str == TYPES[i].str)
             return i;
