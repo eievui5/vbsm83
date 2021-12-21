@@ -51,7 +51,7 @@ enum class BinOpType {
 TokenType determine_token_type(const std::string& string);
 
 class Token {
-  public:
+public:
     TokenType type = TokenType::NONE;
     std::string string;
 
@@ -61,24 +61,26 @@ class Token {
     uint64_t read_uint() { return strtoull(c_str(), NULL, 0); }
 };
 
+typedef std::vector<Token> TokenCluster;
+
 class TokenList {
-  public:
-    std::vector<Token*> tokens;
+public:
+    // A list of tokens, seperated into individual statements
+    std::vector<std::vector<Token>> clusters;
     size_t index = 0;
 
     void print(std::ostream& outfile) {
-        for (Token* i : tokens)
-            outfile << i->string << ", ";
+        for (auto& i : clusters) {
+            for (auto& j : i)
+                outfile << j.string << ", ";
+            outfile << '\n';
+        }
     }
 
     void seek(int _index) { index = _index; }
-    Token& get_token() { return *tokens.at(index++); }
-    int remaining() { return tokens.size() - index; }
-
-    ~TokenList() {
-        for (Token* i : tokens)
-            delete i;
-    }
+    // Returns a cluster of tokens.
+    TokenCluster& get_cluster() { return clusters[index++]; }
+    int remaining() { return clusters.size() - index; }
 };
 
 extern const char BRACKETS[];

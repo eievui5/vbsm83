@@ -57,13 +57,28 @@ int main(int argc, char* argv[]) {
     std::stringstream processed_infile = preprocess(input_file);
     TokenList token_list;
 
+    std::vector<Token*> token_vector;
     while (!processed_infile.eof()) {
         Token* token = read_token(processed_infile);
         if (token->type == TokenType::NONE) {
             delete token;
             continue;
         }
-        token_list.tokens.push_back(token);
+        token_vector.push_back(token);
+    }
+    token_list.clusters.push_back({});
+    for (auto& i : token_vector) {
+        char first_char = i->string[0];
+        if (first_char == ';') {
+            token_list.clusters.push_back({});
+            delete i;
+            continue;
+        }
+        // Copy the token into the cluster.
+        token_list.clusters.back().push_back(*i);
+        delete i;
+        if (first_char == '}' || first_char == '{')
+            token_list.clusters.push_back({});
     }
 
     // Output debug info.
@@ -72,7 +87,7 @@ int main(int argc, char* argv[]) {
     cout << "Token list:\n";
     token_list.print(cout);
     cout << "\n\n";
-    StatementList statements = parse_statements(token_list);
+    StatementBlock statements = parse_statements(token_list);
     cout << "Recognized statements:\n";
     for (auto& i : statements) {
         i.print(cout);
