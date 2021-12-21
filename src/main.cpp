@@ -55,28 +55,22 @@ int main(int argc, char* argv[]) {
 
     // Process input.
     std::stringstream processed_infile = preprocess(input_file);
+    input_file.close();
     TokenList token_list;
-
-    std::vector<Token*> token_vector;
-    while (!processed_infile.eof()) {
-        Token* token = read_token(processed_infile);
-        if (token->type == TokenType::NONE) {
-            delete token;
-            continue;
-        }
-        token_vector.push_back(token);
-    }
     token_list.clusters.push_back({});
-    for (auto& i : token_vector) {
-        char first_char = i->string[0];
+
+    while (!processed_infile.eof()) {
+        Token token;
+        if (read_token(processed_infile, token))
+            break;
+        warn("%s", token.c_str());
+        char first_char = token.string[0];
         if (first_char == ';') {
             token_list.clusters.push_back({});
-            delete i;
             continue;
         }
         // Copy the token into the cluster.
-        token_list.clusters.back().push_back(*i);
-        delete i;
+        token_list.clusters.back().push_back(token);
         if (first_char == '}' || first_char == '{')
             token_list.clusters.push_back({});
     }

@@ -12,7 +12,6 @@ class TokenList;
 enum class StorageClass { EXTERN, EXPORT, STATIC };
 
 enum class TokenType {
-    NONE,
     BINARY_OPERATOR,
     UNARY_OPERATOR,
     TYPE,
@@ -52,7 +51,7 @@ TokenType determine_token_type(const std::string& string);
 
 class Token {
 public:
-    TokenType type = TokenType::NONE;
+    TokenType type;
     std::string string;
 
     const char* c_str() { return string.c_str(); }
@@ -93,5 +92,5 @@ extern const char SINGLES[];
 extern const char SYMBOLS[];
 extern const char WHITESPACE[];
 
-Token* read_token(std::istream& infile);
+bool read_token(std::istream& infile, Token& token);
 int strinstrs(const std::string& str, const char** strs);

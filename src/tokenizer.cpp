@@ -65,33 +65,33 @@ TokenType determine_token_type(const std::string& string) {
     return TokenType::IDENTIFIER;
 }
 
-Token* read_token(std::istream& infile) {
-    Token* token = new Token;
+bool read_token(std::istream& infile, Token& token) {
     bool alpha_mode;
 
     while (1) {
         char next_char = infile.get();
+        warn("%c", next_char);
 
-        if (next_char == EOF) {
-            if (token->string.length() == 0)
-                return token;
+        if (infile.eof()) {
+            if (token.string.length() == 0)
+                return true;
             break;
         }
 
-        if (token->string.length() == 0) {
+        if (token.string.length() == 0) {
             // Ignore leading whitespace.
             if (isspace(next_char))
                 continue;
 
             // Now check for single-char tokens, such as BRACKETS, ",", and ";".
             if (strchr(SINGLES, next_char) != NULL) {
-                token->string += next_char;
+                token.string += next_char;
                 break;
             }
 
             // Check for negative signs.
             if (next_char == '-' and strchr(NUMBERS, infile.peek())) {
-                token->string += '-';
+                token.string += '-';
                 next_char = infile.get();
             }
 
@@ -111,10 +111,10 @@ Token* read_token(std::istream& infile) {
         }
 
         // If the token did not end, append to the raw string and continue.
-        token->string += next_char;
+        token.string += next_char;
     }
 
-    token->determine_type();
+    token.determine_type();
 
-    return token;
+    return false;
 }
