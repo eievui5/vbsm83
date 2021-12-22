@@ -60,17 +60,17 @@ int main(int argc, char* argv[]) {
     token_list.clusters.push_back({});
 
     while (!processed_infile.eof()) {
-        Token token;
-        if (read_token(processed_infile, token))
+        uptr<Token> token = std::make_unique<Token>();
+        if (read_token(processed_infile, *token)) {
             break;
-        warn("%s", token.c_str());
-        char first_char = token.string[0];
+        }
+        char first_char = token->string[0];
         if (first_char == ';') {
             token_list.clusters.push_back({});
             continue;
         }
         // Copy the token into the cluster.
-        token_list.clusters.back().push_back(token);
+        token_list.clusters.back().push_back(std::move(token));
         if (first_char == '}' || first_char == '{')
             token_list.clusters.push_back({});
     }
@@ -81,10 +81,10 @@ int main(int argc, char* argv[]) {
     cout << "Token list:\n";
     token_list.print(cout);
     cout << "\n\n";
-    StatementBlock statements = parse_statements(token_list);
+    StatementBlock statements = parse_declarations(token_list);
     cout << "Recognized statements:\n";
     for (auto& i : statements) {
-        i.print(cout);
+        i->print(cout);
         cout << '\n';
     }
 }

@@ -8,15 +8,19 @@
 
 class Statement {
 public:
-    std::vector<Token>* tokens;
+    TokenCluster* tokens;
 
     void print(std::ostream& outfile) {
+        if (tokens == nullptr) {
+            warn("I AM VERY CONFUSE. INFO");
+            return;
+        }
         for (auto& i : *tokens)
-            outfile << i.string << ' ';
+            outfile << i->string << ' ';
     }
 };
 
-typedef std::vector<Statement> StatementBlock;
+typedef std::vector<uptr<Statement>> StatementBlock;
 
 class AssignStatement : public Statement {
 public:
@@ -64,4 +68,5 @@ public:
 };
 
 std::vector<std::vector<Token*>> collect_statements(TokenList& token_list);
+StatementBlock parse_declarations(TokenList& tokens);
 StatementBlock parse_statements(TokenList& token_list);

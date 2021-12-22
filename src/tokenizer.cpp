@@ -12,11 +12,10 @@ const char* KEYWORDS[] = {"fn", "var", "return", nullptr};
 const char* STORAGE_CLASS[] = {"extern", "export", "static", nullptr};
 // Values which denote the beginning of a number.
 const char NUMBERS[] = "-0123456789";
-const char* BIN_OPS[] = {
+const char* OPERATORS[] = {
     "+", "-", "*", "/", "mod", "&", "|", "^", "&&", "||", "<<", ">>", "<", ">",
-    "<=", ">=", "!=", "==", nullptr
+    "<=", ">=", "!=", "==", "!", "-", "~", nullptr
 };
-const char* UN_OPS[] = {"!", "-", "~", nullptr};
 const char SINGLES[] = "(){},;";
 const char SYMBOLS[] = "!-*&~+-/|^<>=(){}[],;";
 
@@ -51,10 +50,8 @@ TokenType determine_token_type(const std::string& string) {
     if (strinstrs(string, KEYWORDS) != -1)
         return TokenType::KEYWORD;
     // Then operators...
-    if (strinstrs(string, BIN_OPS) >= 0)
-        return TokenType::BINARY_OPERATOR;
-    if (strinstrs(string, UN_OPS) >= 0)
-        return TokenType::UNARY_OPERATOR;
+    if (strinstrs(string, OPERATORS) >= 0)
+        return TokenType::OPERATOR;
     // Types...
     if (get_type_from_str(string) != -1)
         return TokenType::TYPE;
@@ -70,7 +67,6 @@ bool read_token(std::istream& infile, Token& token) {
 
     while (1) {
         char next_char = infile.get();
-        warn("%c", next_char);
 
         if (infile.eof()) {
             if (token.string.length() == 0)

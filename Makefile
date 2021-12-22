@@ -1,7 +1,10 @@
+CC := clang++
 BIN := bin/dcc-backend
 OBJS := $(patsubst src/%.cpp, obj/%.o, $(shell find src/ -name '*.cpp'))
 
-CFLAGS := -Isrc/include -std=c++17 -Wall -Wimplicit-fallthrough
+DEBUGFLAGS := -O0 -g
+CFLAGS := -Isrc/include -std=c++17 -Wall -Wimplicit-fallthrough -include "defines.hpp"
+CFLAGS += $(DEBUGFLAGS)
 
 all: $(BIN)
 
@@ -18,14 +21,14 @@ test: all
 	./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
 
 memcheck: all
-	valgrind ./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
+	valgrind --leak-check=full ./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
 
 # Compile each source file.
 obj/%.o: src/%.cpp
 	@mkdir -p $(@D)
-	g++ $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 # Link the output binary.
 $(BIN): $(OBJS)
 	@mkdir -p $(@D)
-	g++ $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^
