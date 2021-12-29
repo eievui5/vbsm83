@@ -1,17 +1,17 @@
 #pragma once
 
-#include <string>
+#include <stdlib.h>
 
-struct CPUReg {
+typedef struct CPUReg {
     // The symbol used to identify the register; how it appears in the output code.
-    const std::string name;
+    const char* name;
     // How many bytes wide is the register.
-    const int size;
+    const size_t size;
     // Register which owns this register, if any.
-    const CPUReg* parent;
+    const struct CPUReg* parent;
     // Registers that this register contains.
-    const CPUReg** children;
-};
+    const struct CPUReg** children;
+} CPUReg;
 
 extern const CPUReg a_reg;
 extern const CPUReg c_reg;

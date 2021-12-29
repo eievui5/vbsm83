@@ -1,9 +1,7 @@
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-bool enable_info = false;
 unsigned error_count = 0;
 
 void warn(char const* fmt, ...) {
@@ -38,4 +36,9 @@ void fatal(char const* fmt, ...) {
     putc('\n', stderr);
 
     exit(1);
+}
+
+void errcheck() {
+    if (error_count > 0)
+        fatal("CLI failed with %u errors.\n", error_count);
 }

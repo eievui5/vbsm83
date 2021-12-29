@@ -1,30 +1,28 @@
-CC := clang++
+CC := gcc
 BIN := bin/dcc-backend
-OBJS := $(patsubst src/%.cpp, obj/%.o, $(shell find src/ -name '*.cpp'))
+OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.c'))
 
-DEBUGFLAGS := -O0 -g
-CFLAGS := -Isrc/include -std=c++17 -Wall -Wimplicit-fallthrough -include "defines.hpp"
-CFLAGS += $(DEBUGFLAGS)
+CFLAGS := -Isrc/include -std=c17 -Wall -Wimplicit-fallthrough -Wno-unused-result -MD -O0 -g
+TESTFLAGS := -o - -i examples/adder.dcc
 
-all: $(BIN)
+all:
+	$(MAKE) $(BIN)
 
 clean:
-	rm -rf bin/
-	rm -rf obj/
+	rm -rf bin/ obj/
 
 rebuild:
 	$(MAKE) clean
 	$(MAKE) all
 
 test: all
-	@echo "	=== BEGINNING TEST! ==="
-	./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
+	./$(BIN) $(TESTFLAGS)
 
 memcheck: all
-	valgrind --leak-check=full ./$(BIN) -v -o bin/output.asm -i examples/adder.dcc
+	valgrind --leak-check=full ./$(BIN) $(TESTFLAGS)
 
 # Compile each source file.
-obj/%.o: src/%.cpp
+obj/%.o: src/%.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 

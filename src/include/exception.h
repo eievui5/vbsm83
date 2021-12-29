@@ -2,9 +2,6 @@
 
 #include <stdbool.h>
 
-extern bool enable_info;
-extern unsigned error_count;
-
 /* Print a warning message to stderr.
  * Warnings alert the user to strange or unsafe behavior that does not prevent
  * execution.
@@ -21,3 +18,7 @@ void error(char const* fmt, ...);
 /* Print a fatal error message to stderr and end execution immediately.
  */
 void fatal(char const* fmt, ...);
+
+/* Exit the program if any errors have occured.
+ */
+void errcheck();
