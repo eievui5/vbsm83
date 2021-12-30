@@ -2,8 +2,12 @@ CC := gcc
 BIN := bin/dcc-backend
 OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.c'))
 
-CFLAGS := -Isrc/include -std=c17 -Wall -Wimplicit-fallthrough -Wno-unused-result -MD -O0 -g
+CFLAGS := -Isrc/include -std=c17 -Wall -Wimplicit-fallthrough -Wno-unused-result -MD
+RELEASEFLAGS := -Ofast -s -flto
+DEBUGFLAGS := -O0 -g
 TESTFLAGS := -o - -i examples/adder.dcc
+
+CFLAGS += $(DEBUGFLAGS)
 
 all:
 	$(MAKE) $(BIN)

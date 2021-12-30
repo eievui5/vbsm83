@@ -115,7 +115,6 @@ typedef struct Function {
     uint8_t* parameter_types;
 } Function;
 
-void fprint_statement(FILE* out, Statement* statement);
 void fprint_declaration(FILE* out, Declaration* declaration);
 void free_statement(Statement* statement);
 void free_declaration(Declaration* declaration);

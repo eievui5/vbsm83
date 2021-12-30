@@ -16,6 +16,8 @@ const char* OPERATOR[] = { "=", // = is a dummy value.
 const char* TYPE[] = {"void", "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "p", NULL};
 const char* STORAGE_CLASS[] = {"static", "extern", "export", NULL};
 
+// Check for the occurance of a given string within a NULL-terminated array of strings.
+// Returns -1 upon failure.
 int strinstrs(const char* str, const char** strs) {
     for (int i = 0; strs[i] != NULL; i++)
         if (strcmp(str, strs[i]) == 0)
@@ -23,12 +25,14 @@ int strinstrs(const char* str, const char** strs) {
     return -1;
 }
 
+// Return the next character in a file, without consuming it.
 int fpeek(FILE* f) {
     int c = getc(f);
     ungetc(c, f);
     return c;
 }
 
+// Print the remaining characters in the current line of a file.
 void fdebugs(FILE* f) {
     long p = ftell(f);
     char* s = NULL;
@@ -39,6 +43,7 @@ void fdebugs(FILE* f) {
     fseek(f, p, SEEK_SET);
 }
 
+// Read a statement from an IR file.
 Statement* fget_statement(FILE* infile) {
     char* first_token;
 
@@ -180,6 +185,8 @@ Statement* fget_statement(FILE* infile) {
     }
 }
 
+// Read a declaration from an IR file. If a function is encountered, its
+// statements will be read and stored.
 Declaration* fget_declaration(FILE* infile) {
     char* storage_class;
     char* decl_type;
@@ -265,8 +272,11 @@ Declaration* fget_declaration(FILE* infile) {
     return decl;
 }
 
+// Parse an entire file, including all declarations and statements, and return
+// a VArray of declarations.
 Declaration** fparse_textual_ir(FILE* infile) {
     Declaration** decl_list = va_new(0);
+    // Continue until the end of the file is reached.
     while (fscanf(infile, " "), !feof(infile)) {
         Declaration* decl = fget_declaration(infile);
         va_append(decl_list, decl);

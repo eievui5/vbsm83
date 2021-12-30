@@ -5,6 +5,7 @@
 #include "statements.h"
 #include "varray.h"
 
+// Convert a statement structure into valid textual IR.
 void fprint_statement(FILE* out, Statement* statement) {
     switch (statement->type) {
     case OPERATION:
@@ -43,6 +44,8 @@ void fprint_statement(FILE* out, Statement* statement) {
     }
 }
 
+// Convert a declaration structure into valid textual IR. If a function is
+// encountered, its statements will be printed as well.
 void fprint_declaration(FILE* out, Declaration* declaration) {
     fprintf(out, "%s %s %s [[ ",
             STORAGE_CLASS[declaration->storage_class],
