@@ -3,6 +3,33 @@
 #include "statements.h"
 #include "varray.h"
 
+struct OptimizeOption {
+    const char* name;
+    bool* flag;
+};
+
+bool remove_unused = true;
+
+const struct OptimizeOption optimization_options[] = {
+    {"remove-unused", &remove_unused},
+    {NULL, NULL}
+};
+
+void parse_opt_flag(const char* arg) {
+    bool new_val = true;
+    if (strncmp(arg, "no-", 3) == 0) {
+        new_val = false;
+        arg += 3;
+    }
+    for (int i = 0; optimization_options[i].name != NULL; i++) {
+        if (strcmp(optimization_options[i].name, arg) == 0) {
+            *optimization_options[i].flag = new_val;
+            return;
+        }
+    }
+    error("Optimization option \"%s\" not found.", arg);
+}
+
 void count_block_references(Function* func) {
     for (int i = 0; i < va_len(func->basic_blocks); i++)
         func->basic_blocks[i].ref_count = 0;
@@ -78,5 +105,14 @@ void remove_unused_blocks(Function* func) {
             va_remove(func->basic_blocks, i);
             i -= 1; // Handle the change in size by offsetting i.
         }
+    }
+}
+
+void optimize_ir(Declaration** decls) {
+    // Remove unused basic blocks.
+    if (remove_unused) {
+        for (int i = 0; i < va_len(decls); i++)
+            if (decls[i]->is_fn)
+                remove_unused_blocks((Function*) decls[i]);
     }
 }

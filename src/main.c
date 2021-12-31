@@ -9,12 +9,13 @@
 #include "varray.h"
 
 static struct option const longopts[] = {
-    {"input",  required_argument, NULL, 'i'},
-    {"output", required_argument, NULL, 'o'},
-    {"ir",     required_argument, NULL, 'r'},
+    {"optimize", required_argument, NULL, 'f'},
+    {"input",    required_argument, NULL, 'i'},
+    {"output",   required_argument, NULL, 'o'},
+    {"ir",       required_argument, NULL, 'r'},
     {NULL}
 };
-static const char shortopts[] = "i:o:r:";
+static const char shortopts[] = "f:i:o:r:";
 
 int main(int argc, char* argv[]) {
     FILE* ir_in = NULL;
@@ -27,6 +28,9 @@ int main(int argc, char* argv[]) {
     // Parse command-line options.
     for (char option_char; (option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1;) {
         switch (option_char) {
+        case 'f':
+            parse_opt_flag(optarg);
+            break;
         case 'i':
             ir_in_path = optarg;
             break;
@@ -75,9 +79,7 @@ int main(int argc, char* argv[]) {
     // Parse the input IR file.
     Declaration** declaration_list = fparse_textual_ir(ir_in);
 
-    for (int i = 0; i < va_len(declaration_list); i++)
-        if (declaration_list[i]->is_fn)
-            remove_unused_blocks((Function*) declaration_list[i]);
+    optimize_ir(declaration_list);
 
     // Check for errors before writing to output files.
     errcheck();
