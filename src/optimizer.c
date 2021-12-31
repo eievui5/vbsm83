@@ -18,7 +18,6 @@ void count_block_references(Function* func) {
                         continue;
                     if (strcmp(this_jump->label, func->basic_blocks[k].label) == 0) {
                         func->basic_blocks[k].ref_count += 1;
-                        warn("Increased ref count of %s to %u.", func->basic_blocks[k].label, func->basic_blocks[k].ref_count);
                         goto found_label;
                     }
                 }
@@ -69,20 +68,12 @@ void generate_basic_blocks(Function* func) {
         }
     }
 
-    for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        printf("\033[1mContents of %s:\033[0m\n", func->basic_blocks[i].label == NULL ? "anonymous basic block" : func->basic_blocks[i].label);
-        for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
-            fprint_statement(stdout, func->basic_blocks[i].statements[j]);
-        }
-    }
     count_block_references(func);
 }
 
 void remove_unused_blocks(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
-
         if (func->basic_blocks[i].ref_count == 0) {
-            warn("Removing unreferenced block %s in %s.", func->basic_blocks[i].label, func->declaration.identifier);
             va_free(func->basic_blocks[i].statements);
             va_remove(func->basic_blocks, i);
             i -= 1; // Handle the change in size by offsetting i.
