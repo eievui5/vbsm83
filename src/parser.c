@@ -3,6 +3,7 @@
 #include <inttypes.h>
 
 #include "exception.h"
+#include "optimizer.h"
 #include "statements.h"
 #include "varray.h"
 
@@ -262,6 +263,7 @@ Declaration* fget_declaration(FILE* infile) {
             function->parameter_types[i] = strinstrs(parameter_types[i], TYPE);
         }
         function->statements = statement_block;
+        generate_basic_blocks(function);
     }
 
     free(storage_class);

@@ -3,11 +3,13 @@ export var u16 number;
 static fn u8 [[ noninline pure ]] main() {
     u16 %0 = 4;
     number = %0;
+    jmp debug_label;
   @debug_label:
     u16 %1 = number;
     u8 %2 = %0 + %1;
     return %2;
-  jmp debug_label;
+  @unused_label:
+    jmp debug_label;
 }
 
 export fn u8 [[ noninline pure ]] add(u8, u8) {

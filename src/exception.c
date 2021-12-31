@@ -40,5 +40,5 @@ void fatal(char const* fmt, ...) {
 
 void errcheck() {
     if (error_count > 0)
-        fatal("CLI failed with %u errors.\n", error_count);
+        fatal("Failed with %u error%s.", error_count, error_count != 1 ? "s" : "");
 }

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 enum VariableType {
@@ -107,14 +108,25 @@ typedef struct Label {
     char* identifier;
 } Label;
 
+// A simple list of statements, beginning with an optional label and ending with
+// either a jump or return. Basic blocks may later be converted back into a
+// plain statement list, if IR output is needed.
+typedef struct BasicBlock {
+    char* label; // May be NULL.
+    Statement** statements;
+    unsigned ref_count;
+} BasicBlock;
+
 // Functions can simply be treated as read-only global variables.
 typedef struct Function {
     Declaration declaration;
     Statement** statements;
     size_t parameter_count;
     uint8_t* parameter_types;
+    BasicBlock* basic_blocks;
 } Function;
 
+void fprint_statement(FILE* out, Statement* statement);
 void fprint_declaration(FILE* out, Declaration* declaration);
 void free_statement(Statement* statement);
 void free_declaration(Declaration* declaration);

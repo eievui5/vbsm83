@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "exception.h"
+#include "optimizer.h"
 #include "parser.h"
 #include "statements.h"
 #include "varray.h"
@@ -43,7 +44,7 @@ int main(int argc, char* argv[]) {
     if (ir_in_path == NULL) {
         error("Missing input file path.");
     } else {
-    	ir_in_path = fopen(ir_in_path, "r");
+    	ir_in = fopen(ir_in_path, "r");
     	if (ir_in == NULL)
     		error("Failed to open %s.", ir_in_path);
     }
@@ -74,6 +75,10 @@ int main(int argc, char* argv[]) {
     // Parse the input IR file.
     Declaration** declaration_list = fparse_textual_ir(ir_in);
 
+    for (int i = 0; i < va_len(declaration_list); i++)
+        if (declaration_list[i]->is_fn)
+            remove_unused_blocks((Function*) declaration_list[i]);
+
     // Check for errors before writing to output files.
     errcheck();
 
@@ -88,6 +93,8 @@ int main(int argc, char* argv[]) {
     va_free(declaration_list);
 
     fclose(ir_in);
-    fclose(ir_out);
-    fclose(asm_out);
+    if (ir_out != NULL)
+        fclose(ir_out);
+    if (asm_out != NULL)
+        fclose(asm_out);
 }

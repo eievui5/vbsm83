@@ -63,8 +63,15 @@ void fprint_declaration(FILE* out, Declaration* declaration) {
                 fprintf(out, ", %s", TYPE[function->parameter_types[i]]);
         }
         fputs(") {\n", out);
-        for (int i = 0; i < va_len(function->statements); i++)
-            fprint_statement(out, function->statements[i]);
+
+        // Print statements using basic blocks, since this is the "optimized"
+        // version of the master statement list.
+        for (int i = 0; i < va_len(function->basic_blocks); i++) {
+            if (function->basic_blocks[i].label != NULL)
+                fprintf(out, "  @%s:\n", function->basic_blocks[i].label);
+            for (int j = 0; j < va_len(function->basic_blocks[i].statements); j++)
+                fprint_statement(out, function->basic_blocks[i].statements[j]);
+        }
         fputs("}\n", out);
     } else {
         fputs(";\n", out);
@@ -101,6 +108,10 @@ void free_declaration(Declaration* declaration) {
         free(function->parameter_types);
         for (int i = 0; i < va_len(function->statements); i++)
             free_statement(function->statements[i]);
+        // Also free basic block containers.
+        for (int i = 0; i < va_len(function->basic_blocks); i++)
+            va_free(function->basic_blocks[i].statements);
+        va_free(function->basic_blocks);
         va_free(function->statements);
     }
     free(declaration);
