@@ -83,9 +83,14 @@ int main(int argc, char* argv[]) {
     errcheck();
 
     // If an IR output file was provided, print to it now.
-    if (ir_out != NULL)
-        for (int i = 0; i < va_len(declaration_list); i++)
+    if (ir_out != NULL) {
+        if (va_len(declaration_list) > 0)
+            fprint_declaration(ir_out, declaration_list[0]);
+        for (int i = 1; i < va_len(declaration_list); i++) {
+            fputc('\n', ir_out);
             fprint_declaration(ir_out, declaration_list[i]);
+        }
+    }
 
     // Final clean up before exit.
     for (int i = 0; i < va_len(declaration_list); i++)
