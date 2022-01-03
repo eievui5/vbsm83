@@ -44,7 +44,7 @@ enum OpType {
     B_AND, B_OR, B_XOR, L_AND, L_OR,
     LSH, RSH,
     LESS, GREATER, LESS_EQU, GREATER_EQU, NOT_EQU, EQU,
-    NOT, NEGATE, COMPLEMENT,
+    NOT, NEGATE, COMPLEMENT, ADDRESS, DEREFERENCE
 };
 
 typedef enum StorageClass { STATIC, EXTERN, EXPORT } StorageClass;

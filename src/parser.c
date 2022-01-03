@@ -12,7 +12,9 @@
 
 const char* OPERATOR[] = { "=", // = is a dummy value.
     "+", "-", "*", "/", "mod", "&", "|", "^", "&&", "||", "<<", ">>", "<", ">",
-    "<=", ">=", "!=", "==", "!", "-", "~", NULL
+    "<=", ">=", "!=", "==",
+    // Unary operators are special cases, and should *not* expected from `strinstrs()`.
+    "!", "-", "~", "&", "*", NULL
 };
 const char* TYPE[] = {"void", "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "p", NULL};
 const char* STORAGE_CLASS[] = {"static", "extern", "export", NULL};
@@ -67,9 +69,11 @@ Statement* fget_statement(FILE* infile) {
             op->statement.type = OPERATION;
             op->var_type = strinstrs(first_token, TYPE);
             op->dest = dest;
+            fscanf(infile, " %%%" PRIu64 " ", &op->lhs);
 
             // This is either an assignment or an operation.
             if (fpeek(infile) == ';') {
+                fgetc(infile);
                 // Either an assignment or a unop.
                 if (unop) {
                     switch (unop) {
@@ -82,21 +86,24 @@ Statement* fget_statement(FILE* infile) {
                     case '~':
                         op->type = COMPLEMENT;
                         break;
+                    case '&':
+                        op->type = ADDRESS;
+                        break;
+                    case '*':
+                        op->type = DEREFERENCE;
+                        break;
                     }
-                    fscanf(infile, " %%%" PRIu64 ";", &op->lhs);
                 } else {
                     op->type = ASSIGN;
                     // Parse the assignment value.
                     // In this case, we know it is a variable copy/cast.
                     fgetc(infile);
                     op->rhs.is_const = false;
-                    fscanf(infile, " %%%" PRIu64 ";", &op->rhs.local_id);
+                    op->rhs.local_id = op->lhs;
                 }
             } else {
                 // Parse a binop.
                 char* raw_operation;
-
-                fscanf(infile, " %%%" PRIu64 " ", &op->lhs);
                 fscanf(infile, " %ms ", &raw_operation);
                 op->type = strinstrs(raw_operation, OPERATOR);
                 if (op->type == -1)

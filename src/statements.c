@@ -11,7 +11,7 @@ void fprint_statement(FILE* out, Statement* statement) {
     case OPERATION:
         fprintf(out, "    %s %%%" PRIu64 " = ", TYPE[((Operation*) statement)->var_type], ((Operation*) statement)->dest);
         switch (((Operation*) statement)->type) {
-        case NOT: case NEGATE: case COMPLEMENT:
+        case NOT: case NEGATE: case COMPLEMENT: case ADDRESS: case DEREFERENCE:
             fprintf(out, "%s%%%" PRIu64 ";\n", OPERATOR[((Operation*) statement)->type], ((Operation*) statement)->lhs);
             break; // unops
         case ASSIGN:
