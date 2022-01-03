@@ -55,22 +55,22 @@ void fprint_declaration(FILE* out, Declaration* declaration) {
         fprintf(out, "%s ", declaration->traits[i]);
     fprintf(out, "]] %s", declaration->identifier);
     if (declaration->is_fn) {
-        Function* function = (Function*) declaration;
+        Function* func = (Function*) declaration;
         fputc('(', out);
-        if (function->parameter_count >= 1) {
-            fprintf(out, "%s", TYPE[function->parameter_types[0]]);
-            for (int i = 1; i < function->parameter_count; i++)
-                fprintf(out, ", %s", TYPE[function->parameter_types[i]]);
+        if (func->parameter_count >= 1) {
+            fprintf(out, "%s", TYPE[func->parameter_types[0]]);
+            for (int i = 1; i < func->parameter_count; i++)
+                fprintf(out, ", %s", TYPE[func->parameter_types[i]]);
         }
         fputs(") {\n", out);
 
         // Print statements using basic blocks, since this is the "optimized"
         // version of the master statement list.
-        for (int i = 0; i < va_len(function->basic_blocks); i++) {
-            if (function->basic_blocks[i].label != NULL)
-                fprintf(out, "  @%s:\n", function->basic_blocks[i].label);
-            for (int j = 0; j < va_len(function->basic_blocks[i].statements); j++)
-                fprint_statement(out, function->basic_blocks[i].statements[j]);
+        for (int i = 0; i < va_len(func->basic_blocks); i++) {
+            if (func->basic_blocks[i].label != NULL)
+                fprintf(out, "  @%s:\n", func->basic_blocks[i].label);
+            for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++)
+                fprint_statement(out, func->basic_blocks[i].statements[j]);
         }
         fputs("}\n", out);
     } else {
@@ -104,15 +104,19 @@ void free_declaration(Declaration* declaration) {
     free(declaration->identifier);
     va_free_contents(declaration->traits);
     if (declaration->is_fn) {
-        Function* function = (Function*) declaration;
-        free(function->parameter_types);
-        for (int i = 0; i < va_len(function->statements); i++)
-            free_statement(function->statements[i]);
+        Function* func = (Function*) declaration;
+        free(func->parameter_types);
+        for (int i = 0; i < va_len(func->statements); i++)
+            free_statement(func->statements[i]);
         // Also free basic block containers.
-        for (int i = 0; i < va_len(function->basic_blocks); i++)
-            va_free(function->basic_blocks[i].statements);
-        va_free(function->basic_blocks);
-        va_free(function->statements);
+        for (int i = 0; i < va_len(func->basic_blocks); i++)
+            va_free(func->basic_blocks[i].statements);
+        va_free(func->basic_blocks);
+        va_free(func->statements);
+        for (int i = 0; i < va_len(func->locals); i++)
+            if (func->locals[i] != NULL)
+                va_free(func->locals[i]->references);
+        va_free_contents(func->locals);
     }
     free(declaration);
 }

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "registers.h"
+
 enum VariableType {
     VOID,
     U8, U16, U32, U64,
@@ -124,6 +126,7 @@ typedef struct Function {
     size_t parameter_count;
     uint8_t* parameter_types;
     BasicBlock* basic_blocks;
+    LocalVar** locals;
 } Function;
 
 void fprint_statement(FILE* out, Statement* statement);

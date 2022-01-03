@@ -263,14 +263,15 @@ Declaration* fget_declaration(FILE* infile) {
     decl->is_fn = strcmp(decl_type, "fn") == 0;
     if (decl->is_fn) {
         decl = realloc(decl, sizeof(Function));
-        Function* function = (Function*) decl;
-        function->parameter_count = va_len(parameter_types);
-        function->parameter_types = malloc(va_len(parameter_types) * sizeof(*function->parameter_types));
+        Function* func = (Function*) decl;
+        func->parameter_count = va_len(parameter_types);
+        func->parameter_types = malloc(va_len(parameter_types) * sizeof(*func->parameter_types));
         for (int i = 0; i < va_len(parameter_types); i++) {
-            function->parameter_types[i] = strinstrs(parameter_types[i], TYPE);
+            func->parameter_types[i] = strinstrs(parameter_types[i], TYPE);
         }
-        function->statements = statement_block;
-        generate_basic_blocks(function);
+        func->statements = statement_block;
+        generate_basic_blocks(func);
+        generate_local_vars(func);
     }
 
     free(storage_class);

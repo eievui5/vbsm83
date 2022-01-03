@@ -13,6 +13,11 @@ typedef struct CPUReg {
     const struct CPUReg** children;
 } CPUReg;
 
+typedef struct LocalVar {
+    // VArray of pointers to any occarance in which this local is referenced.
+    size_t** references;
+} LocalVar;
+
 extern const CPUReg a_reg;
 extern const CPUReg c_reg;
 extern const CPUReg b_reg;

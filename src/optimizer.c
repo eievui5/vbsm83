@@ -55,6 +55,40 @@ void count_block_references(Function* func) {
     }
 }
 
+void generate_local_vars(Function* func) {
+    func->locals = va_new(0);
+    // Collect locals.
+    for (int i = 0; i < va_len(func->basic_blocks); i++) {
+        for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
+            Statement* this_statement = func->basic_blocks[i].statements[j];
+            size_t new_index;
+
+            switch (this_statement->type) {
+            case READ:
+                new_index = ((Read*) this_statement)->dest;
+                break;
+            case OPERATION:
+                new_index = ((Operation*) this_statement)->dest;
+                break;
+            default:
+                goto super_continue;
+            }
+
+            size_t prev_len = va_len(func->locals);
+            if (prev_len <= new_index) {
+                va_resize(&func->locals, (new_index + 1) * sizeof(LocalVar*));
+                // Null new entries.
+                memset(func->locals, 0, (new_index - prev_len) * sizeof(LocalVar*));
+            }
+            warn("Identified new local in %s: %%%zu", func->declaration.identifier, new_index);
+            func->locals[new_index] = malloc(sizeof(LocalVar));
+            func->locals[new_index]->references = va_new(0);
+        super_continue:
+            continue;
+        }
+    }
+}
+
 void generate_basic_blocks(Function* func) {
     func->basic_blocks = va_new(sizeof(BasicBlock));
     func->basic_blocks->label = NULL;
