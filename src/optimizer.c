@@ -108,11 +108,32 @@ void remove_unused_blocks(Function* func) {
     }
 }
 
+void remove_unused_fallthroughs(Function* func) {
+    for (int i = 1; i < va_len(func->basic_blocks); i++) {
+        if (func->basic_blocks[i].ref_count == 1
+            && va_last(func->basic_blocks[i - 1].statements)->type == JUMP
+            && strcmp(((Jump*) va_last(func->basic_blocks[i - 1].statements))->label, func->basic_blocks[i].label) == 0)
+        {
+            Statement** old_statements = func->basic_blocks[i].statements;
+            size_t prev_len = va_len(func->basic_blocks[i - 1].statements);
+            va_expand(&func->basic_blocks[i - 1].statements, va_size(old_statements) - sizeof(Statement*));
+            memcpy(func->basic_blocks[i - 1].statements + prev_len - 1, old_statements, va_size(old_statements));
+
+            va_free(old_statements);
+            va_remove(func->basic_blocks, i);
+            i -= 1; // Handle the change in size by offsetting i.
+        }
+    }
+}
+
 void optimize_ir(Declaration** decls) {
     // Remove unused basic blocks.
     if (remove_unused) {
         for (int i = 0; i < va_len(decls); i++)
-            if (decls[i]->is_fn)
+            if (decls[i]->is_fn) {
                 remove_unused_blocks((Function*) decls[i]);
+                count_block_references((Function*) decls[i]);
+                remove_unused_fallthroughs((Function*) decls[i]);
+            }
     }
 }

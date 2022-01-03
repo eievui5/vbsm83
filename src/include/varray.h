@@ -45,6 +45,7 @@ whichever you prefer to read it as :)
 #define va_header(va) ((struct VArrayHeader*) (va) - 1)
 // Get the number of elements in a VArray. Only works if the type is known.
 #define va_len(va) (va_size(va) / sizeof(__typeof__(*va)))
+#define va_last(va) (va)[va_len(va) - 1]
 // Append a value of any type to the end of a VArray.
 #define va_append(va, i) \
     (va_expand((&va), sizeof(i))), \
