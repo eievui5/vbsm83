@@ -1,13 +1,18 @@
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+bool ansi_exceptions;
 unsigned error_count = 0;
 
 void warn(char const* fmt, ...) {
     va_list ap;
 
-    fputs("\033[1m\033[95mwarn: \033[0m", stderr);
+    if (ansi_exceptions)
+        fputs("\033[1m\033[95mwarn: \033[0m", stderr);
+    else
+        fputs("warn: ", stderr);
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
@@ -17,7 +22,10 @@ void warn(char const* fmt, ...) {
 void error(char const* fmt, ...) {
     va_list ap;
 
-    fputs("\033[1m\033[31merror: \033[0m", stderr);
+    if (ansi_exceptions)
+        fputs("\033[1m\033[31merror: \033[0m", stderr);
+    else
+        fputs("error: ", stderr);
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
@@ -29,7 +37,10 @@ void error(char const* fmt, ...) {
 void fatal(char const* fmt, ...) {
     va_list ap;
 
-    fputs("\033[1m\033[31mfatal: \033[0m", stderr);
+    if (ansi_exceptions)
+        fputs("\033[1m\033[31mfatal: \033[0m", stderr);
+    else
+        fputs("fatal: ", stderr);
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);

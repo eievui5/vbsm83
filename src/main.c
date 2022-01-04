@@ -1,6 +1,7 @@
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "exception.h"
 #include "optimizer.h"
@@ -9,13 +10,26 @@
 #include "varray.h"
 
 static struct option const longopts[] = {
+    {"ansi",     required_argument, NULL, 'a'},
     {"optimize", required_argument, NULL, 'f'},
+    {"help",     required_argument, NULL, 'h'},
     {"input",    required_argument, NULL, 'i'},
     {"output",   required_argument, NULL, 'o'},
     {"ir",       required_argument, NULL, 'r'},
     {NULL}
 };
-static const char shortopts[] = "f:i:o:r:";
+static const char shortopts[] = "af:hi:o:r:";
+
+void print_help(char* name) {
+    printf("USAGE: %s -i <infile> -o <outfile>\n", name);
+    puts("OPTIONS:\n"
+         "  -a --ansi     Toggle ANSI terminal support.\n"
+         "  -f --optimize Enable or disable certain optimizations.\n"
+         "  -h --help     Show this message.\n"
+         "  -i --input    Path to the input IR file.\n"
+         "  -o --output   Path to the output assembly file.\n"
+         "  -r --ir       Path to the output optimized IR file.");
+}
 
 int main(int argc, char* argv[]) {
     FILE* ir_in = NULL;
@@ -25,11 +39,23 @@ int main(int argc, char* argv[]) {
     const char* ir_out_path = NULL;
     const char* asm_out_path = NULL;
 
+    // Check if stderr is a tty.
+    ansi_exceptions = isatty(fileno(stderr));
+
     // Parse command-line options.
     for (char option_char; (option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1;) {
         switch (option_char) {
+        case 'a':
+            ansi_exceptions ^= true;
+            break;
         case 'f':
             parse_opt_flag(optarg);
+            break;
+        case 'h':
+            // When explicitly asked for help, output additional info.
+            puts("DCC SM83 backend.\n");
+            print_help(argv[0]);
+            exit(0);
             break;
         case 'i':
             ir_in_path = optarg;

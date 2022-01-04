@@ -2,6 +2,8 @@
 
 #include <stdbool.h>
 
+extern bool ansi_exceptions;
+
 /* Print a warning message to stderr.
  * Warnings alert the user to strange or unsafe behavior that does not prevent
  * execution.
