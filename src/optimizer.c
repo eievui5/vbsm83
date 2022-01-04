@@ -1,5 +1,6 @@
 #include "exception.h"
 #include "optimizer.h"
+#include "parser.h"
 #include "statements.h"
 #include "varray.h"
 
@@ -56,7 +57,14 @@ void count_block_references(Function* func) {
 }
 
 void generate_local_vars(Function* func) {
-    func->locals = va_new(0);
+    func->locals = va_new(func->parameter_count * sizeof(LocalVar*));
+
+    // Begin with parameters
+    for (int i = 0; i < func->parameter_count; i++) {
+        func->locals[i] = malloc(sizeof(LocalVar));
+        func->locals[i]->references = va_new(0);
+    }
+
     // Collect locals.
     for (int i = 0; i < va_len(func->basic_blocks); i++) {
         for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
@@ -78,9 +86,10 @@ void generate_local_vars(Function* func) {
             if (prev_len <= new_index) {
                 va_resize(&func->locals, (new_index + 1) * sizeof(LocalVar*));
                 // Null new entries.
-                memset(func->locals, 0, (new_index - prev_len) * sizeof(LocalVar*));
+                memset(func->locals + prev_len, 0, (new_index + 1 - prev_len) * sizeof(LocalVar*));
             }
-            warn("Identified new local in %s: %%%zu", func->declaration.identifier, new_index);
+            if (func->locals[new_index] != NULL)
+                fatal("Local variable %%%zu in %s has been assigned twice.", new_index, func->declaration.identifier);
             func->locals[new_index] = malloc(sizeof(LocalVar));
             func->locals[new_index]->references = va_new(0);
         super_continue:

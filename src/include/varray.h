@@ -53,10 +53,10 @@ whichever you prefer to read it as :)
 #define va_remove(va, i) \
     memmove((va) + (i), (va) + (i) + 1, va_size(va) - (i) * sizeof(*(va)) - sizeof(*(va))), \
     va_header(va)->size -= sizeof(*(va))
-#define va_free_contents(va) \
+#define va_free_contents(va) { \
     for (int __i = 0; __i < va_len(va); __i++) \
         free(va[__i]); \
-    va_free(va)
+    va_free(va); }
 
 // Header for VArray objects. This is placed *before* the array, so that the
 // user is able to directly index the array and use any type of their choosing.
