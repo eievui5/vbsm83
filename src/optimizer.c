@@ -51,6 +51,7 @@ void count_block_references(Function* func) {
                 }
                 error("Jump references nonexistant label \"%s\"", this_jump->label);
             found_label:
+                continue;
             }
         }
     }

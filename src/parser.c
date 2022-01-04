@@ -46,11 +46,30 @@ void fdebugs(FILE* f) {
     fseek(f, p, SEEK_SET);
 }
 
+// I can't use fscanf("%ms") because I need to support MacOS...
+char* fmgetx(FILE* f, char* exclude) {
+    fscanf(f, " "); // Skip leading whitespace.
+    int i = 0;
+    int len = 16;
+    char* str = malloc(len);
+    while (strchr(exclude, fpeek(f)) == NULL) {
+        str[i++] = fgetc(f);
+        if (len - 1 == i)
+            str = realloc(str, len *= 2);
+    }
+    str[i] = 0;
+    fscanf(f, " "); // Skip trailing whitespace.
+    return str;
+}
+
+char* fmgets(FILE* f) {
+    return fmgetx(f, " \n");
+}
+
 // Read a statement from an IR file.
 Statement* fget_statement(FILE* infile) {
-    char* first_token;
+    char* first_token = fmgets(infile);
 
-    fscanf(infile, "%ms ", &first_token);
     if (strinstrs(first_token, TYPE) != -1) {
         uint64_t dest = 255;
         fscanf(infile, "%%%" PRIu64 " = ", &dest);
@@ -103,11 +122,9 @@ Statement* fget_statement(FILE* infile) {
                 }
             } else {
                 // Parse a binop.
-                char* raw_operation;
-                fscanf(infile, " %ms ", &raw_operation);
+                char* raw_operation = fmgets(infile);
+
                 op->type = strinstrs(raw_operation, OPERATOR);
-                if (op->type == -1)
-                    error("Unknown operator \"%s\".", raw_operation);
                 free(raw_operation);
                 if (fpeek(infile) == '%') {
                     op->rhs.is_const = false;
@@ -145,7 +162,9 @@ Statement* fget_statement(FILE* infile) {
             rd->statement.type = READ;
             rd->var_type = strinstrs(first_token, TYPE);
             rd->dest = dest;
-            fscanf(infile, " %m[^; \n] ;", &rd->src);
+            rd->src = fmgetx(infile, "; \n");
+            if (fgetc(infile) != ';')
+                error("Expected semicolon after read statement.");
 
             free(first_token);
             return &rd->statement;
@@ -154,9 +173,14 @@ Statement* fget_statement(FILE* infile) {
         Label* lab = malloc(sizeof(Label));
         lab->statement.type = LABEL;
 
-        sscanf(first_token, "@%m[^: \n]:", &lab->identifier);
+        memmove(first_token, first_token + 1, strlen(first_token) - 1);
+        char* term = strchr(first_token, ':');
+        if (term == NULL)
+            fatal("Missing terminating colon in label declaration.");
+        *term = 0;
 
-        free(first_token);
+        lab->identifier = first_token;
+
         return &lab->statement;
     } else if (strcmp(first_token, "return") == 0) {
         Return* ret = malloc(sizeof(Return));
@@ -180,7 +204,9 @@ Statement* fget_statement(FILE* infile) {
         Jump* jmp = malloc(sizeof(Jump));
         jmp->statement.type = JUMP;
 
-        fscanf(infile, " %m[^; \n] ;", &jmp->label);
+        jmp->label = fmgetx(infile, "; \n");
+        if (fgetc(infile) != ';')
+            error("Expected semicolon after jump statement.");
 
         free(first_token);
         return &jmp->statement;
@@ -196,29 +222,27 @@ Statement* fget_statement(FILE* infile) {
 // Read a declaration from an IR file. If a function is encountered, its
 // statements will be read and stored.
 Declaration* fget_declaration(FILE* infile) {
-    char* storage_class;
-    char* decl_type;
-    char* var_type;
     char** trait_list = va_new(0);
     char* identifier;
     char** parameter_types = va_new(0);
     Statement** statement_block;
 
-    fscanf(infile, " %ms %ms %ms ", &storage_class, &decl_type, &var_type);
+    char* storage_class = fmgets(infile);
+    char* decl_type = fmgets(infile);
+    char* var_type = fmgets(infile);
 
     // Parse trait list (if present).
-    char* next_string;
-    fscanf(infile, " %m[^; ] ", &next_string);
+    char* next_string = fmgetx(infile, "; \n");
     if (strcmp(next_string, "[[") == 0) {
         free(next_string);
         while (1) {
-            fscanf(infile, " %ms ", &next_string);
+            next_string = fmgets(infile);
             if (strcmp(next_string, "]]") == 0)
                 break;
             va_append(trait_list, next_string);
         }
         free(next_string);
-        fscanf(infile, " %m[^;( \n] ", &next_string);
+        next_string = fmgetx(infile, ";( \n");
     }
 
     // Collect name.
@@ -230,8 +254,7 @@ Declaration* fget_declaration(FILE* infile) {
             fatal("Expected ( to begin function parameter list of \"%s\".", identifier);
         if (fpeek(infile) != ')') {
             while (fpeek(infile) != ')') {
-                char* parameter_type;
-                fscanf(infile, " %m[^,)]", &parameter_type);
+                char* parameter_type = fmgetx(infile, ",)]");
                 va_append(parameter_types, parameter_type);
                 char next_char = fpeek(infile);
                 if (next_char == ',')
