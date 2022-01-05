@@ -10,9 +10,9 @@
 #include "varray.h"
 
 static struct option const longopts[] = {
-    {"ansi",     required_argument, NULL, 'a'},
+    {"ansi",     no_argument,       NULL, 'a'},
     {"optimize", required_argument, NULL, 'f'},
-    {"help",     required_argument, NULL, 'h'},
+    {"help",     no_argument,       NULL, 'h'},
     {"input",    required_argument, NULL, 'i'},
     {"output",   required_argument, NULL, 'o'},
     {"ir",       required_argument, NULL, 'r'},
@@ -21,8 +21,8 @@ static struct option const longopts[] = {
 static const char shortopts[] = "af:hi:o:r:";
 
 void print_help(char* name) {
-    printf("USAGE: %s -i <infile> -o <outfile>\n", name);
-    puts("OPTIONS:\n"
+    printf("usage:\n  %s -i <infile> -o <outfile>\n", name);
+    puts("options:\n"
          "  -a --ansi     Toggle ANSI terminal support.\n"
          "  -f --optimize Enable or disable certain optimizations.\n"
          "  -h --help     Show this message.\n"
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
             break;
         case 'h':
             // When explicitly asked for help, output additional info.
-            puts("DCC SM83 backend.\n");
+            puts("DCC SM83 backend");
             print_help(argv[0]);
             exit(0);
             break;
