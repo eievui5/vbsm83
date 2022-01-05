@@ -7,16 +7,24 @@
 struct OptimizeOption {
     const char* name;
     bool* flag;
+    const char* desc;
 };
 
 bool remove_unused = true;
 
 const struct OptimizeOption optimization_options[] = {
-    {"remove-unused", &remove_unused},
-    {NULL, NULL}
+    {"remove-unused", &remove_unused, "Remove unused blocks and fallthroughs."},
+    {NULL}
 };
 
 void parse_opt_flag(const char* arg) {
+    if (strcmp(arg, "help") == 0) {
+        puts("Optimization options:\nPrefix an option with \"no-\" to disable it.");
+        for (int i = 0; optimization_options[i].name != NULL; i++) {
+            printf("  -f%s %44s\n", optimization_options[i].name, optimization_options[i].desc);
+        }
+        exit(0);
+    }
     bool new_val = true;
     if (strncmp(arg, "no-", 3) == 0) {
         new_val = false;
