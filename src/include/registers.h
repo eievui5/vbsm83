@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 
+struct Statement;
+
 typedef struct CPUReg {
     // The symbol used to identify the register; how it appears in the output code.
     const char* name;
@@ -14,8 +16,10 @@ typedef struct CPUReg {
 } CPUReg;
 
 typedef struct LocalVar {
+    uint8_t type;
     // VArray of pointers to any occarance in which this local is referenced.
     size_t** references;
+    struct Statement* origin;
 } LocalVar;
 
 extern const CPUReg a_reg;

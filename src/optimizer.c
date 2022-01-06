@@ -79,13 +79,16 @@ void generate_local_vars(Function* func) {
         for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
             Statement* this_statement = func->basic_blocks[i].statements[j];
             size_t new_index;
+            uint8_t type;
 
             switch (this_statement->type) {
             case READ:
                 new_index = ((Read*) this_statement)->dest;
+                type = ((Read*) this_statement)->var_type;
                 break;
             case OPERATION:
                 new_index = ((Operation*) this_statement)->dest;
+                type = ((Operation*) this_statement)->var_type;
                 break;
             default:
                 goto super_continue;
@@ -100,6 +103,7 @@ void generate_local_vars(Function* func) {
             if (func->locals[new_index] != NULL)
                 fatal("Local variable %%%zu in %s has been assigned twice.", new_index, func->declaration.identifier);
             func->locals[new_index] = malloc(sizeof(LocalVar));
+            func->locals[new_index]->type = type;
             func->locals[new_index]->references = va_new(0);
         super_continue:
             continue;

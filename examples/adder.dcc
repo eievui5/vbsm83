@@ -5,7 +5,7 @@ static fn u8 [[ noninline pure ]] main() {
     number = %0;
     jmp debug_label;
   @debug_label:
-    u16 %1 = number;
+    u16 %1 = %0;
     u8 %2 = %0 + %1;
     return %2;
   @unused_label:
