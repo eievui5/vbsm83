@@ -69,8 +69,8 @@ void fprint_declaration(FILE* out, Declaration* declaration) {
         for (int i = 0; i < va_len(func->basic_blocks); i++) {
             if (func->basic_blocks[i].label != NULL)
                 fprintf(out, "  @%s:\n", func->basic_blocks[i].label);
-            for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++)
-                fprint_statement(out, func->basic_blocks[i].statements[j]);
+            for (Statement* state = func->basic_blocks[i].first; state != NULL; state = state->next)
+                fprint_statement(out, state);
         }
         fputs("}\n", out);
     } else {
@@ -108,9 +108,6 @@ void free_declaration(Declaration* declaration) {
         free(func->parameter_types);
         for (int i = 0; i < va_len(func->statements); i++)
             free_statement(func->statements[i]);
-        // Also free basic block containers.
-        for (int i = 0; i < va_len(func->basic_blocks); i++)
-            va_free(func->basic_blocks[i].statements);
         va_free(func->basic_blocks);
         va_free(func->statements);
         for (int i = 0; i < va_len(func->locals); i++)

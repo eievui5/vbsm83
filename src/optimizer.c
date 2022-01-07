@@ -43,11 +43,9 @@ void count_block_references(Function* func) {
     for (int i = 0; i < va_len(func->basic_blocks); i++)
         func->basic_blocks[i].ref_count = 0;
     for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
-            Statement* this_statement = func->basic_blocks[i].statements[j];
-
-            if (this_statement->type == JUMP) {
-                Jump* this_jump = ((Jump*) this_statement);
+        for (Statement* this_state = func->basic_blocks[i].first; this_state != NULL; this_state = this_state->next) {
+            if (this_state->type == JUMP) {
+                Jump* this_jump = ((Jump*) this_state);
 
                 for (int k = 0; k < va_len(func->basic_blocks); k++) {
                     if (func->basic_blocks[k].label == NULL)
@@ -76,19 +74,18 @@ void generate_local_vars(Function* func) {
 
     // Collect locals.
     for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        for (int j = 0; j < va_len(func->basic_blocks[i].statements); j++) {
-            Statement* this_statement = func->basic_blocks[i].statements[j];
+        for (Statement* this_state = func->basic_blocks[i].first; this_state != NULL; this_state = this_state->next) {
             size_t new_index;
             uint8_t type;
 
-            switch (this_statement->type) {
+            switch (this_state->type) {
             case READ:
-                new_index = ((Read*) this_statement)->dest;
-                type = ((Read*) this_statement)->var_type;
+                new_index = ((Read*) this_state)->dest;
+                type = ((Read*) this_state)->var_type;
                 break;
             case OPERATION:
-                new_index = ((Operation*) this_statement)->dest;
-                type = ((Operation*) this_statement)->var_type;
+                new_index = ((Operation*) this_state)->dest;
+                type = ((Operation*) this_state)->var_type;
                 break;
             default:
                 goto super_continue;
@@ -111,10 +108,34 @@ void generate_local_vars(Function* func) {
     }
 }
 
+static void append_to_block(BasicBlock* bb, Statement* st) {
+    if (bb->first == NULL) {
+        // If the list is empty set st to both the first and final entry...
+        bb->first = st;
+        bb->final = st;
+        // ...with no links.
+        st->last = NULL;
+        st->next = NULL;
+    } else {
+        // Otherwise set st to the last entry, update the old last entry's next
+        // link to st, and set st's last link to the old last.
+        st->last = bb->final;
+        bb->final->next = st;
+        bb->final = st;
+        st->next = NULL;
+    }
+}
+
+static inline void init_block(BasicBlock* bb, char* label) {
+    bb->label = label;
+    bb->ref_count = 0;
+    bb->first = NULL;
+    bb->final = NULL;
+}
+
 void generate_basic_blocks(Function* func) {
     func->basic_blocks = va_new(sizeof(BasicBlock));
-    func->basic_blocks->label = NULL;
-    func->basic_blocks->statements = va_new(0);
+    init_block(func->basic_blocks, NULL);
 
     for (int i = 0; i < va_len(func->statements); i++) {
         uint8_t statement_type = func->statements[i]->type;
@@ -122,32 +143,28 @@ void generate_basic_blocks(Function* func) {
         // Labels begin new basic blocks, unless the current block is empty and
         // has no label!
         if (statement_type == LABEL) {
-            if (last_block->label == NULL && va_len(last_block->statements) == 0) {
+            if (last_block->label == NULL && last_block->first == NULL) {
                 last_block->label = ((Label*) func->statements[i])->identifier;
             } else {
                 va_expand(&func->basic_blocks, sizeof(BasicBlock));
                 BasicBlock* new_block = &func->basic_blocks[va_len(func->basic_blocks) - 1];
-                new_block->label = ((Label*) func->statements[i])->identifier;
-                new_block->ref_count = 0;
-                new_block->statements = va_new(0);
+                init_block(new_block, ((Label*) func->statements[i])->identifier);
                 error("Label \"%s\" is not followed by a jump; implicit fallthroughs are not allowed.", new_block->label);
             }
         } else if (statement_type == JUMP || statement_type == RETURN) {
-            va_append(last_block->statements, func->statements[i]);
+            append_to_block(last_block, func->statements[i]);
             for (i++; i < va_len(func->statements); i++) {
                 if (func->statements[i]->type != LABEL) {
                     error("Statement following a jump must be a label.");
                 } else {
                     va_expand(&func->basic_blocks, sizeof(BasicBlock));
-                    BasicBlock* new_block = &func->basic_blocks[va_len(func->basic_blocks) - 1];
-                    new_block->label = ((Label*) func->statements[i])->identifier;
-                    new_block->ref_count = 0;
-                    new_block->statements = va_new(0);
+                    init_block(&func->basic_blocks[va_len(func->basic_blocks) - 1],
+                               ((Label*) func->statements[i])->identifier);
                     break;
                 }
             }
         } else {
-            va_append(last_block->statements, func->statements[i]);
+            append_to_block(last_block, func->statements[i]);
         }
     }
 
@@ -157,7 +174,6 @@ void generate_basic_blocks(Function* func) {
 void remove_unused_blocks(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
         if (func->basic_blocks[i].ref_count == 0) {
-            va_free(func->basic_blocks[i].statements);
             va_remove(func->basic_blocks, i);
             i -= 1; // Handle the change in size by offsetting i.
         }
@@ -167,15 +183,15 @@ void remove_unused_blocks(Function* func) {
 void remove_unused_fallthroughs(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
         if (func->basic_blocks[i].ref_count == 1
-            && va_last(func->basic_blocks[i - 1].statements)->type == JUMP
-            && strcmp(((Jump*) va_last(func->basic_blocks[i - 1].statements))->label, func->basic_blocks[i].label) == 0)
+            && func->basic_blocks[i - 1].final->type == JUMP
+            && strcmp(((Jump*) func->basic_blocks[i - 1].final)->label, func->basic_blocks[i].label) == 0)
         {
-            Statement** old_statements = func->basic_blocks[i].statements;
-            size_t prev_len = va_len(func->basic_blocks[i - 1].statements);
-            va_expand(&func->basic_blocks[i - 1].statements, va_size(old_statements) - sizeof(Statement*));
-            memcpy(func->basic_blocks[i - 1].statements + prev_len - 1, old_statements, va_size(old_statements));
+            for (Statement* state = func->basic_blocks[i].final->last; state != NULL;) {
+                Statement* this_state = state;
+                state = state->last;
+                append_to_block(&func->basic_blocks[i - 1], this_state);
+            }
 
-            va_free(old_statements);
             va_remove(func->basic_blocks, i);
             i -= 1; // Handle the change in size by offsetting i.
         }

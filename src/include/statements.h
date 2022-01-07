@@ -51,7 +51,11 @@ enum OpType {
 
 typedef enum StorageClass { STATIC, EXTERN, EXPORT } StorageClass;
 
-typedef struct Statement { uint8_t type; } Statement;
+typedef struct Statement {
+    uint8_t type;
+    struct Statement* last;
+    struct Statement* next;
+} Statement;
 
 // Used when both constants and locals are possible options.
 typedef struct Value {
@@ -115,7 +119,8 @@ typedef struct Label {
 // plain statement list, if IR output is needed.
 typedef struct BasicBlock {
     char* label; // May be NULL.
-    Statement** statements;
+    Statement* first;
+    Statement* final;
     unsigned ref_count;
 } BasicBlock;
 
@@ -123,6 +128,7 @@ typedef struct BasicBlock {
 typedef struct Function {
     Declaration declaration;
     Statement** statements;
+    Statement* first_statement;
     size_t parameter_count;
     uint8_t* parameter_types;
     BasicBlock* basic_blocks;
