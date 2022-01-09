@@ -4,6 +4,7 @@
 
 #include "exception.h"
 #include "optimizer.h"
+#include "parser.h"
 #include "statements.h"
 #include "varray.h"
 
@@ -83,7 +84,7 @@ void fdetermine_const_value(FILE* infile, Value* val) {
 void fdetermine_value(FILE* infile, Value* val) {
     if (fpeek(infile) == '%') {
         val->is_const = false;
-        fscanf(infile, "%%%" PRIu64 ";", &val->local_id);
+        fscanf(infile, "%%%u;", &val->local_id);
     } else {
         fdetermine_const_value(infile, val);
     }
@@ -94,8 +95,8 @@ Statement* fget_statement(FILE* infile) {
     char* first_token = fmgets(infile);
 
     if (strinstrs(first_token, TYPE) != -1) {
-        uint64_t dest = 255;
-        fscanf(infile, "%%%" PRIu64 " = ", &dest);
+        unsigned dest;
+        fscanf(infile, "%%%u = ", &dest);
 
         // If the first token is a type, this is either an operation, or a read.
         // Distiguishing reads is extremely simple; if the token after the '='
@@ -111,7 +112,7 @@ Statement* fget_statement(FILE* infile) {
             op->statement.type = OPERATION;
             op->var_type = strinstrs(first_token, TYPE);
             op->dest = dest;
-            fscanf(infile, " %%%" PRIu64 " ", &op->lhs);
+            fscanf(infile, " %%%u ", &op->lhs);
 
             // This is either an assignment or an operation.
             if (fpeek(infile) == ';') {
@@ -203,7 +204,7 @@ Statement* fget_statement(FILE* infile) {
         Write* wrt = malloc(sizeof(Write));
         wrt->statement.type = WRITE;
         wrt->dest = first_token;
-        fscanf(infile, " = %%%" PRIu64 ";", &wrt->src);
+        fscanf(infile, " = %%%u;", &wrt->src);
         return &wrt->statement;
     }
 }

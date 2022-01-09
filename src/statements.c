@@ -7,7 +7,7 @@
 
 void fprint_value(FILE* out, Value* val) {
     if (!val->is_const)
-        fprintf(out, "%%%" PRIu64, val->local_id);
+        fprintf(out, "%%%u", val->local_id);
     else if (val->is_signed)
         fprintf(out, "%" PRIi64, val->const_signed);
     else
@@ -18,36 +18,38 @@ void fprint_value(FILE* out, Value* val) {
 void fprint_statement(FILE* out, Statement* statement) {
     switch (statement->type) {
     case OPERATION: {
-        Operation* op = statement;
-        fprintf(out, "    %s %%%" PRIu64 " = ", TYPE[op->var_type], op->dest);
+        Operation* op = (Operation*) statement;
+        fprintf(out, "    %s %%%u = ", TYPE[op->var_type], op->dest);
         switch (op->type) {
         case NOT: case NEGATE: case COMPLEMENT: case ADDRESS: case DEREFERENCE:
-            fprintf(out, "%s%%%" PRIu64 ";\n", OPERATOR[op->type], op->lhs);
+            fprintf(out, "%s%%%u;\n", OPERATOR[op->type], op->lhs);
             break; // unops
         case ASSIGN:
             fprint_value(out, &op->rhs);
             fputs(";\n", out);
             break; //assign
         default:
-            fprintf(out, "%%%" PRIu64 " %s ", op->lhs, OPERATOR[op->type]);
+            fprintf(out, "%%%u %s ", op->lhs, OPERATOR[op->type]);
             fprint_value(out, &op->rhs);
             fputs(";\n", out);
             break; // binops
         }
     } break;
     case READ: {
-        Read* read = statement;
-        fprintf(out, "    %s %%%" PRIu64 " = %s;\n", TYPE[read->var_type], read->dest, read->src);
+        Read* read = (Read*) statement;
+        fprintf(out, "    %s %%%u = %s;\n", TYPE[read->var_type], read->dest, read->src);
     } break;
     case WRITE:
-        fprintf(out, "    %s = %%%" PRIu64 ";\n", ((Write*) statement)->dest, ((Write*) statement)->src);
+        fprintf(out, "    %s = %%%u;\n", ((Write*) statement)->dest, ((Write*) statement)->src);
         break;
     case JUMP:
         fprintf(out, "    jmp %s;\n", ((Jump*) statement)->label);
         break;
     case RETURN: {
-        Return* ret = statement;
-        fprintf(out, "    return %s%" PRIu64 ";\n", ret->val.is_const ? "" : "%", ret->val.const_unsigned);
+        Return* ret = (Return*) statement;
+        fputs("    return ", out);
+        fprint_value(out, &ret->val);
+        fputs(";\n", out);
     } break;
     case LABEL:
         fprintf(out, "  @%s:\n", ((Label*) statement)->identifier);
