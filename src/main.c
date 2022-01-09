@@ -25,7 +25,7 @@ void print_help(char* name) {
     printf("usage:\n  %s -i <infile> -o <outfile>\n", name);
     puts("options:\n"
          "  -a --ansi     Toggle ANSI terminal support.\n"
-         "  -f --optimize Enable or disable certain optimizations.\n"
+         "  -f --optimize Enable or disable certain optimizations. Enter -fhelp for help.\n"
          "  -h --help     Show this message.\n"
          "  -i --input    Path to the input IR file.\n"
          "  -o --output   Path to the output assembly file.\n"
@@ -43,6 +43,14 @@ int main(int argc, char* argv[]) {
     // Check if stderr is a tty.
     ansi_exceptions = isatty(fileno(stderr));
 
+    // If the program is run without arguments, assume the user is asking for help.
+    if (argc < 2) {
+        warn("No arguments provided. Printing help.");
+        puts("DCC SM83 backend");
+        print_help(argv[0]);
+        exit(0);
+    }
+
     // Parse command-line options.
     for (char option_char; (option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1;) {
         switch (option_char) {
@@ -50,13 +58,22 @@ int main(int argc, char* argv[]) {
             ansi_exceptions ^= true;
             break;
         case 'f':
-            parse_opt_flag(optarg);
+            if (strequ(optarg, "help")) {
+                print_opt_help();
+                // If fhelp is the only argument, simply end execution.
+                if (argc == 2)
+                    exit(0);
+            } else {
+                parse_opt_flag(optarg);
+            }
             break;
         case 'h':
             // When explicitly asked for help, output additional info.
             puts("DCC SM83 backend");
             print_help(argv[0]);
-            exit(0);
+            // If help is the only argument, simply end execution.
+            if (argc == 2)
+                exit(0);
             break;
         case 'i':
             ir_in_path = optarg;
@@ -70,7 +87,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Verify inputs.
     // An input IR file is required.
     if (ir_in_path == NULL) {
         error("Missing input file path.");
@@ -79,24 +95,27 @@ int main(int argc, char* argv[]) {
     	if (ir_in == NULL)
     		error("Failed to open %s.", ir_in_path);
     }
+
     // Output optimized IR file is optional.
 	if (ir_out_path != NULL) {
-        if (strcmp(ir_out_path, "-") == 0)
+        if (strequ(ir_out_path, "-"))
             ir_out = stdout;
         else
     	    ir_out = fopen(ir_out_path, "w");
     	if (ir_out == NULL)
     		error("Failed to open %s.", ir_out_path);
     }
+
     // Assembly output is also optional, in case only optimized IR is needed.
 	if (asm_out_path != NULL) {
-        if (strcmp(asm_out_path, "-") == 0)
+        if (strequ(asm_out_path, "-"))
             asm_out = stdout;
         else
     	    asm_out = fopen(asm_out_path, "w");
     	if (asm_out == NULL)
     		error("Failed to open %s.", asm_out_path);
     }
+
     if (asm_out == NULL && ir_out == NULL)
         warn("No output files were provided. Performing a dry run.");
 
@@ -105,7 +124,6 @@ int main(int argc, char* argv[]) {
 
     // Parse the input IR file.
     Declaration** declaration_list = fparse_textual_ir(ir_in);
-
     optimize_ir(declaration_list);
 
     // Check for errors before writing to output files.

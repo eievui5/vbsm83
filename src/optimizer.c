@@ -17,26 +17,33 @@ const struct OptimizeOption optimization_options[] = {
     {NULL}
 };
 
+void print_opt_help() {
+    puts("Optimization options:\nPrefix an option with \"no-\" to disable it.");
+    for (int i = 0; optimization_options[i].name != NULL; i++)
+        printf("  -f%s %44s\n", optimization_options[i].name, optimization_options[i].desc);
+}
+
 void parse_opt_flag(const char* arg) {
-    if (strcmp(arg, "help") == 0) {
-        puts("Optimization options:\nPrefix an option with \"no-\" to disable it.");
-        for (int i = 0; optimization_options[i].name != NULL; i++) {
-            printf("  -f%s %44s\n", optimization_options[i].name, optimization_options[i].desc);
-        }
-        exit(0);
-    }
+    static bool displayed_help = false;
     bool new_val = true;
+
     if (strncmp(arg, "no-", 3) == 0) {
         new_val = false;
         arg += 3;
     }
     for (int i = 0; optimization_options[i].name != NULL; i++) {
-        if (strcmp(optimization_options[i].name, arg) == 0) {
+        if (strequ(optimization_options[i].name, arg)) {
             *optimization_options[i].flag = new_val;
             return;
         }
     }
+
     error("Optimization option \"%s\" not found.", arg);
+    // Only print help once if an error occurs.
+    if (!displayed_help) {
+        print_opt_help();
+        displayed_help = true;
+    }
 }
 
 void count_block_references(Function* func) {
@@ -50,7 +57,7 @@ void count_block_references(Function* func) {
                 for (int k = 0; k < va_len(func->basic_blocks); k++) {
                     if (func->basic_blocks[k].label == NULL)
                         continue;
-                    if (strcmp(this_jump->label, func->basic_blocks[k].label) == 0) {
+                    if (strequ(this_jump->label, func->basic_blocks[k].label)) {
                         func->basic_blocks[k].ref_count += 1;
                         goto found_label;
                     }
@@ -101,6 +108,7 @@ void generate_local_vars(Function* func) {
                 fatal("Local variable %%%zu in %s has been assigned twice.", new_index, func->declaration.identifier);
             func->locals[new_index] = malloc(sizeof(LocalVar));
             func->locals[new_index]->type = type;
+            func->locals[new_index]->origin = this_state;
             func->locals[new_index]->references = va_new(0);
         super_continue:
             continue;
@@ -171,20 +179,32 @@ void generate_basic_blocks(Function* func) {
     count_block_references(func);
 }
 
+// Removes blocks which are never referenced.
+// This should be called multiple times to handle any changes in the program
+// flow.
 void remove_unused_blocks(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
+        // If the refcount of a block is 0, then there is no way it can be
+        // reached.
         if (func->basic_blocks[i].ref_count == 0) {
             va_remove(func->basic_blocks, i);
             i -= 1; // Handle the change in size by offsetting i.
         }
     }
+    // After removing code, block references must be updated.
+    count_block_references(func);
 }
 
+// Removes any unneccessary fallthroughs to unify basic blocks, allowing for
+// greater optimization potential.
 void remove_unused_fallthroughs(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
+        // If a block is only referenced once, and only by the final statement
+        // of the block before it, then the two blocks can be unified into one,
+        // and the jump can be removed entirely.
         if (func->basic_blocks[i].ref_count == 1
             && func->basic_blocks[i - 1].final->type == JUMP
-            && strcmp(((Jump*) func->basic_blocks[i - 1].final)->label, func->basic_blocks[i].label) == 0)
+            && strequ(((Jump*) func->basic_blocks[i - 1].final)->label, func->basic_blocks[i].label))
         {
             for (Statement* state = func->basic_blocks[i].final->last; state != NULL;) {
                 Statement* this_state = state;
@@ -198,14 +218,15 @@ void remove_unused_fallthroughs(Function* func) {
     }
 }
 
+// Run various optimizations according to the user's options.
 void optimize_ir(Declaration** decls) {
     // Remove unused basic blocks.
     if (remove_unused) {
         for (int i = 0; i < va_len(decls); i++)
             if (decls[i]->is_fn) {
-                remove_unused_blocks((Function*) decls[i]);
-                count_block_references((Function*) decls[i]);
-                remove_unused_fallthroughs((Function*) decls[i]);
+                Function* func = (Function*) decls[i];
+                remove_unused_blocks(func);
+                remove_unused_fallthroughs(func);
             }
     }
 }

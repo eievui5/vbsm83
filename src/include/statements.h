@@ -60,6 +60,7 @@ typedef struct Statement {
 // Used when both constants and locals are possible options.
 typedef struct Value {
     bool is_const;
+    bool is_signed;
     union {
         uint64_t const_unsigned;
         int64_t  const_signed;

@@ -9,8 +9,9 @@
 
 #define SYMBOLS "!-*&~+-/|^<>=(){}[],;"
 #define NUMBERS "1234567890"
+#define WHITESPACE " \n\t"
 
-const char* OPERATOR[] = { "=", // = is a dummy value.
+const char* OPERATOR[] = { "=", // `=` is a dummy value.
     "+", "-", "*", "/", "mod", "&", "|", "^", "&&", "||", "<<", ">>", "<", ">",
     "<=", ">=", "!=", "==",
     // Unary operators are special cases, and should *not* expected from `strinstrs()`.
@@ -19,23 +20,23 @@ const char* OPERATOR[] = { "=", // = is a dummy value.
 const char* TYPE[] = {"void", "u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64", "f32", "f64", "p", NULL};
 const char* STORAGE_CLASS[] = {"static", "extern", "export", NULL};
 
-// Check for the occurance of a given string within a NULL-terminated array of strings.
-// Returns -1 upon failure.
+// Check for the occurance of a given string within a NULL-terminated array of
+// strings. Returns -1 upon failure.
 int strinstrs(const char* str, const char** strs) {
     for (int i = 0; strs[i] != NULL; i++)
-        if (strcmp(str, strs[i]) == 0)
+        if (strequ(str, strs[i]))
             return i;
     return -1;
 }
 
-// Return the next character in a file, without consuming it.
+// Return the next character in a file without consuming it.
 int fpeek(FILE* f) {
     int c = getc(f);
     ungetc(c, f);
     return c;
 }
 
-// Print the remaining characters in the current line of a file.
+// Print the remaining characters in the current line of a file; for debugging.
 void fdebugs(FILE* f) {
     long p = ftell(f);
     char* s = NULL;
@@ -62,8 +63,30 @@ char* fmgetx(FILE* f, char* exclude) {
     return str;
 }
 
-char* fmgets(FILE* f) {
-    return fmgetx(f, " \n");
+static inline char* fmgets(FILE* f) { return fmgetx(f, WHITESPACE); }
+
+// Determines if the following value is a local variable, signed constant, or
+// unsigned constant.
+void fdetermine_const_value(FILE* infile, Value* val) {
+    val->is_const = true;
+    if (fpeek(infile) == '-') {
+        val->is_signed = true;
+        fscanf(infile, "%" PRIi64 ";", &val->const_signed);
+    } else {
+        val->is_signed = false;
+        fscanf(infile, "%" PRIu64 ";", &val->const_unsigned);
+    }
+}
+
+// Determines if the following value is a local variable, signed constant, or
+// unsigned constant.
+void fdetermine_value(FILE* infile, Value* val) {
+    if (fpeek(infile) == '%') {
+        val->is_const = false;
+        fscanf(infile, "%%%" PRIu64 ";", &val->local_id);
+    } else {
+        fdetermine_const_value(infile, val);
+    }
 }
 
 // Read a statement from an IR file.
@@ -96,21 +119,11 @@ Statement* fget_statement(FILE* infile) {
                 // Either an assignment or a unop.
                 if (unop) {
                     switch (unop) {
-                    case '-':
-                        op->type = NEGATE;
-                        break;
-                    case '!':
-                        op->type = NOT;
-                        break;
-                    case '~':
-                        op->type = COMPLEMENT;
-                        break;
-                    case '&':
-                        op->type = ADDRESS;
-                        break;
-                    case '*':
-                        op->type = DEREFERENCE;
-                        break;
+                    case '-': op->type = NEGATE; break;
+                    case '!': op->type = NOT; break;
+                    case '~': op->type = COMPLEMENT; break;
+                    case '&': op->type = ADDRESS; break;
+                    case '*': op->type = DEREFERENCE; break;
                     }
                 } else {
                     op->type = ASSIGN;
@@ -126,17 +139,8 @@ Statement* fget_statement(FILE* infile) {
 
                 op->type = strinstrs(raw_operation, OPERATOR);
                 free(raw_operation);
-                if (fpeek(infile) == '%') {
-                    op->rhs.is_const = false;
-                    fscanf(infile, "%%%" PRIu64 ";", &op->rhs.local_id);
-                } else {
-                    op->rhs.is_const = true;
-                    if (fpeek(infile) == '-') {
-                        fscanf(infile, "%" PRIi64 ";", &op->rhs.const_signed);
-                    } else {
-                        fscanf(infile, "%" PRIu64 ";", &op->rhs.const_unsigned);
-                    }
-                }
+
+                fdetermine_value(infile, &op->rhs);
             }
 
             free(first_token);
@@ -148,12 +152,7 @@ Statement* fget_statement(FILE* infile) {
             op->dest = dest;
             op->type = ASSIGN;
 
-            op->rhs.is_const = true;
-            if (fpeek(infile) == '-') {
-                fscanf(infile, "%" PRIi64 ";", &op->rhs.const_signed);
-            } else {
-                fscanf(infile, "%" PRIu64 ";", &op->rhs.const_unsigned);
-            }
+            fdetermine_const_value(infile, &op->rhs);
 
             free(first_token);
             return &op->statement;
@@ -162,7 +161,7 @@ Statement* fget_statement(FILE* infile) {
             rd->statement.type = READ;
             rd->var_type = strinstrs(first_token, TYPE);
             rd->dest = dest;
-            rd->src = fmgetx(infile, "; \n");
+            rd->src = fmgetx(infile, ";" WHITESPACE);
             if (fgetc(infile) != ';')
                 error("Expected semicolon after read statement.");
 
@@ -182,29 +181,19 @@ Statement* fget_statement(FILE* infile) {
         lab->identifier = first_token;
 
         return &lab->statement;
-    } else if (strcmp(first_token, "return") == 0) {
+    } else if (strequ(first_token, "return")) {
         Return* ret = malloc(sizeof(Return));
         ret->statement.type = RETURN;
 
-        if (fpeek(infile) == '%') {
-            ret->val.is_const = false;
-            fscanf(infile, "%%%" PRIu64 ";", &ret->val.local_id);
-        } else {
-            ret->val.is_const = true;
-            if (fpeek(infile) == '-') {
-                fscanf(infile, "%" PRIi64 ";", &ret->val.const_signed);
-            } else {
-                fscanf(infile, "%" PRIu64 ";", &ret->val.const_unsigned);
-            }
-        }
+        fdetermine_value(infile, &ret->val);
 
         free(first_token);
         return &ret->statement;
-    } else if (strcmp(first_token, "jmp") == 0) {
+    } else if (strequ(first_token, "jmp")) {
         Jump* jmp = malloc(sizeof(Jump));
         jmp->statement.type = JUMP;
 
-        jmp->label = fmgetx(infile, "; \n");
+        jmp->label = fmgetx(infile, ";" WHITESPACE);
         if (fgetc(infile) != ';')
             error("Expected semicolon after jump statement.");
 
@@ -232,29 +221,29 @@ Declaration* fget_declaration(FILE* infile) {
     char* var_type = fmgets(infile);
 
     // Parse trait list (if present).
-    char* next_string = fmgetx(infile, "; \n");
-    if (strcmp(next_string, "[[") == 0) {
+    char* next_string = fmgetx(infile, ";" WHITESPACE);
+    if (strequ(next_string, "[[")) {
         free(next_string);
         while (1) {
             next_string = fmgets(infile);
-            if (strcmp(next_string, "]]") == 0)
+            if (strequ(next_string, "]]"))
                 break;
             va_append(trait_list, next_string);
         }
         free(next_string);
-        next_string = fmgetx(infile, ";( \n");
+        next_string = fmgetx(infile, ";(" WHITESPACE);
     }
 
     // Collect name.
     identifier = next_string;
 
     // Parse parameters.
-    if ((strcmp(storage_class, "export") == 0 || strcmp(storage_class, "static") == 0) && strcmp(decl_type, "fn") == 0) {
+    if ((strequ(storage_class, "export") || strequ(storage_class, "static")) && strequ(decl_type, "fn")) {
         if (getc(infile) != '(')
             fatal("Expected ( to begin function parameter list of \"%s\".", identifier);
         if (fpeek(infile) != ')') {
             while (fpeek(infile) != ')') {
-                char* parameter_type = fmgetx(infile, ",)]");
+                char* parameter_type = fmgetx(infile, ",)");
                 va_append(parameter_types, parameter_type);
                 char next_char = fpeek(infile);
                 if (next_char == ',')
@@ -276,14 +265,14 @@ Declaration* fget_declaration(FILE* infile) {
         }
         fgetc(infile);
     } else if (getc(infile) != ';')
-        fatal("Declaration of %s \"%s\" missing closing semicolon (;).", strcmp(decl_type, "fn") == 0 ? "function" : "variable", identifier);
+        fatal("Declaration of %s \"%s\" missing closing semicolon (;).", strequ(decl_type, "fn") ? "function" : "variable", identifier);
 
     Declaration* decl = malloc(sizeof(Declaration));
     decl->storage_class = strinstrs(storage_class, STORAGE_CLASS);
     decl->identifier = identifier;
     decl->traits = trait_list;
     decl->type = strinstrs(var_type, TYPE);
-    decl->is_fn = strcmp(decl_type, "fn") == 0;
+    decl->is_fn = strequ(decl_type, "fn");
     if (decl->is_fn) {
         decl = realloc(decl, sizeof(Function));
         Function* func = (Function*) decl;
