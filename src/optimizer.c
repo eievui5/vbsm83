@@ -134,7 +134,18 @@ static void append_to_block(BasicBlock* bb, Statement* st) {
     }
 }
 
-static inline void init_block(BasicBlock* bb, char* label) {
+static void remove_from_block(BasicBlock* bb, Statement* st) {
+    if (bb->first == st)
+        bb->first = st->next;
+    if (bb->final == st)
+        bb->final = st->last;
+    if (st->next != NULL)
+        st->next->last = st->last;
+    if (st->last != NULL)
+        st->last->next = st->next;
+}
+
+static void init_block(BasicBlock* bb, char* label) {
     bb->label = label;
     bb->ref_count = 0;
     bb->first = NULL;
@@ -199,17 +210,18 @@ void remove_unused_blocks(Function* func) {
 // greater optimization potential.
 void remove_unused_fallthroughs(Function* func) {
     for (int i = 1; i < va_len(func->basic_blocks); i++) {
+        BasicBlock* this_block = &func->basic_blocks[i];
+        BasicBlock* last_block = &func->basic_blocks[i - 1];
         // If a block is only referenced once, and only by the final statement
         // of the block before it, then the two blocks can be unified into one,
         // and the jump can be removed entirely.
-        if (func->basic_blocks[i].ref_count == 1
-            && func->basic_blocks[i - 1].final->type == JUMP
-            && strequ(((Jump*) func->basic_blocks[i - 1].final)->label, func->basic_blocks[i].label))
-        {
-            for (Statement* state = func->basic_blocks[i].final->last; state != NULL;) {
+        if (this_block->ref_count == 1 && last_block->final->type == JUMP
+            && strequ(((Jump*) last_block->final)->label, this_block->label)) {
+            remove_from_block(last_block, last_block->final);
+            for (Statement* state = this_block->first; state != NULL;) {
                 Statement* this_state = state;
-                state = state->last;
-                append_to_block(&func->basic_blocks[i - 1], this_state);
+                state = state->next;
+                append_to_block(last_block, this_state);
             }
 
             va_remove(func->basic_blocks, i);
