@@ -19,7 +19,7 @@ typedef struct CPUReg {
 typedef struct LocalVar {
     uint8_t type;
     // VArray of pointers to any occarance in which this local is referenced.
-    size_t** references;
+    unsigned** references;
     struct Statement* origin;
 } LocalVar;
 

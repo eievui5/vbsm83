@@ -51,10 +51,12 @@ enum OpType {
 
 typedef enum StorageClass { STATIC, EXTERN, EXPORT } StorageClass;
 
+struct BasicBlock;
 typedef struct Statement {
     uint8_t type;
     struct Statement* last;
     struct Statement* next;
+    struct BasicBlock* parent;
 } Statement;
 
 // Used when both constants and locals are possible options.

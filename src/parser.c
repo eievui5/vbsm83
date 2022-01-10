@@ -215,7 +215,7 @@ Declaration* fget_declaration(FILE* infile) {
     char** trait_list = va_new(0);
     char* identifier;
     char** parameter_types = va_new(0);
-    Statement** statement_block;
+    Statement** statement_block = NULL;
 
     char* storage_class = fmgets(infile);
     char* decl_type = fmgets(infile);
