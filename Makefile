@@ -2,7 +2,7 @@ CC := gcc
 BIN := bin/dcc-backend
 OBJS := $(patsubst src/%.c, obj/%.o, $(shell find src/ -name '*.c'))
 
-CFLAGS := -Isrc/include -std=c17 -Wall -Wimplicit-fallthrough -Wno-unused-result -MD
+CFLAGS := -Isrc/include -std=c17 -Wall -Wimplicit-fallthrough -Wno-unused-result -Wno-parentheses -MD
 RELEASEFLAGS := -Os -s -flto
 DEBUGFLAGS := -Og -g
 TESTFLAGS := --ir - --input examples/adder.dcc

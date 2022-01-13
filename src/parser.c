@@ -23,8 +23,8 @@ const char* STORAGE_CLASS[] = {"static", "extern", "export", NULL};
 
 // Check for the occurance of a given string within a NULL-terminated array of
 // strings. Returns -1 upon failure.
-int strinstrs(const char* str, const char** strs) {
-    for (int i = 0; strs[i] != NULL; i++)
+int32_t strinstrs(const char* str, const char** strs) {
+    for (uint32_t i = 0; strs[i]; i++)
         if (strequ(str, strs[i]))
             return i;
     return -1;
@@ -48,11 +48,13 @@ void fdebugs(FILE* f) {
     fseek(f, p, SEEK_SET);
 }
 
+static inline void fskip_space(FILE* f) { fscanf(f, " "); }
+
 // I can't use fscanf("%ms") because I need to support MacOS...
 char* fmgetx(FILE* f, char* exclude) {
-    fscanf(f, " "); // Skip leading whitespace.
-    int i = 0;
-    int len = 16;
+    fskip_space(f); // Skip leading whitespace.
+    size_t i = 0;
+    size_t len = 16;
     char* str = malloc(len);
     while (strchr(exclude, fpeek(f)) == NULL) {
         str[i++] = fgetc(f);
@@ -60,31 +62,51 @@ char* fmgetx(FILE* f, char* exclude) {
             str = realloc(str, len *= 2);
     }
     str[i] = 0;
-    fscanf(f, " "); // Skip trailing whitespace.
+    fskip_space(f); // Skip leading whitespace.
     return str;
 }
 
-static inline char* fmgets(FILE* f) { return fmgetx(f, WHITESPACE); }
+static inline char* fmgets(FILE* f) { return fmgetx(f, WHITESPACE ); }
+
+int64_t fget_int64x(FILE* f, char* exclude) {
+    char* str = fmgetx(f, exclude);
+    int64_t value = strtol(str, NULL, 0);
+    free(str);
+    return value;
+}
+
+static inline int64_t fget_int64(FILE* f) { return fget_int64x(f, WHITESPACE SYMBOLS); }
+
+// Throw an error if the following characters in a file do not match a given
+// string. Does not consider whitespace.
+void fexpect(FILE* f, char* str, char* context) {
+    while (*str) {
+        int c;
+        while (strchr(WHITESPACE, c = fgetc(f)) != NULL && c != EOF) {}
+        if (c == EOF)
+            fatal("Unexpected end of file after %s, expected '%c'", context, *str);
+        if (c != *str)
+            fatal("Expected '%c' after %s, got '%c'.", *str, context, c);
+        str += 1;
+    }
+}
 
 // Determines if the following value is a local variable, signed constant, or
 // unsigned constant.
 void fdetermine_const_value(FILE* infile, Value* val) {
     val->is_const = true;
-    if (fpeek(infile) == '-') {
-        val->is_signed = true;
-        fscanf(infile, "%" PRIi64 ";", &val->const_signed);
-    } else {
-        val->is_signed = false;
-        fscanf(infile, "%" PRIu64 ";", &val->const_unsigned);
-    }
+    // TODO: this does not yet handle unsigned integers which use the 64th bit.
+    val->const_signed = fget_int64(infile);
+    val->is_signed = val->const_signed < 0;
 }
 
 // Determines if the following value is a local variable, signed constant, or
 // unsigned constant.
 void fdetermine_value(FILE* infile, Value* val) {
     if (fpeek(infile) == '%') {
+        fgetc(infile);
         val->is_const = false;
-        fscanf(infile, "%%%u;", &val->local_id);
+        val->local_id = fget_int64(infile);
     } else {
         fdetermine_const_value(infile, val);
     }
@@ -95,8 +117,10 @@ Statement* fget_statement(FILE* infile) {
     char* first_token = fmgets(infile);
 
     if (strinstrs(first_token, TYPE) != -1) {
-        unsigned dest;
-        fscanf(infile, "%%%u = ", &dest);
+        fexpect(infile, "%", "local variable declaration.");
+        uint64_t dest = fget_int64(infile);
+        fexpect(infile, "=", "local variable declaration.");
+        fskip_space(infile);
 
         // If the first token is a type, this is either an operation, or a read.
         // Distiguishing reads is extremely simple; if the token after the '='
@@ -104,15 +128,16 @@ Statement* fget_statement(FILE* infile) {
 
         // Check for unops early.
         char unop = 0;
-        if (strchr(SYMBOLS, fpeek(infile)) != NULL)
+        if (strchr(SYMBOLS, fpeek(infile)))
             unop = fgetc(infile);
 
         if (fpeek(infile) == '%') {
+            fgetc(infile);
             Operation* op = malloc(sizeof(Operation));
             op->statement.type = OPERATION;
             op->var_type = strinstrs(first_token, TYPE);
             op->dest = dest;
-            fscanf(infile, " %%%u ", &op->lhs);
+            op->lhs = fget_int64(infile);
 
             // This is either an assignment or an operation.
             if (fpeek(infile) == ';') {
@@ -142,6 +167,7 @@ Statement* fget_statement(FILE* infile) {
                 free(raw_operation);
 
                 fdetermine_value(infile, &op->rhs);
+                fexpect(infile, ";", "binary operation");
             }
 
             free(first_token);
@@ -154,6 +180,7 @@ Statement* fget_statement(FILE* infile) {
             op->type = ASSIGN;
 
             fdetermine_const_value(infile, &op->rhs);
+            fexpect(infile, ";", "assign operation");
 
             free(first_token);
             return &op->statement;
@@ -163,8 +190,7 @@ Statement* fget_statement(FILE* infile) {
             rd->var_type = strinstrs(first_token, TYPE);
             rd->dest = dest;
             rd->src = fmgetx(infile, ";" WHITESPACE);
-            if (fgetc(infile) != ';')
-                error("Expected semicolon after read statement.");
+            fexpect(infile, ";", "variable identifier in read statement");
 
             free(first_token);
             return &rd->statement;
@@ -187,6 +213,7 @@ Statement* fget_statement(FILE* infile) {
         ret->statement.type = RETURN;
 
         fdetermine_value(infile, &ret->val);
+        fexpect(infile, ";", "return statement");
 
         free(first_token);
         return &ret->statement;
@@ -195,8 +222,7 @@ Statement* fget_statement(FILE* infile) {
         jmp->statement.type = JUMP;
 
         jmp->label = fmgetx(infile, ";" WHITESPACE);
-        if (fgetc(infile) != ';')
-            error("Expected semicolon after jump statement.");
+        fexpect(infile, ";", "jump statemnt");
 
         free(first_token);
         return &jmp->statement;
@@ -204,7 +230,9 @@ Statement* fget_statement(FILE* infile) {
         Write* wrt = malloc(sizeof(Write));
         wrt->statement.type = WRITE;
         wrt->dest = first_token;
-        fscanf(infile, " = %%%u;", &wrt->src);
+        fexpect(infile, "=%", "variable identifier");
+        wrt->src = fget_int64x(infile, ";");
+        fexpect(infile, ";", "local variable in write statement");
         return &wrt->statement;
     }
 }
@@ -253,15 +281,17 @@ Declaration* fget_declaration(FILE* infile) {
                     fatal("Unexpected character '%c' after function parameter of type \"%s\" in \"%s\"", next_char, parameter_type, identifier);
             }
         }
-        char open_brace;
-        fscanf(infile, ") %c ", &open_brace);
+        fgetc(infile); // Skip closing parentheses.
+        fskip_space(infile);
+        char open_brace = fgetc(infile);
+        fskip_space(infile);
         if (open_brace != '{')
             fatal("Declaration of function \"%s\" missing opening brace ({).", identifier);
 
         statement_block = va_new(0);
         while (fpeek(infile) != '}') {
             Statement* statement = fget_statement(infile);
-            fscanf(infile, " ");
+            fskip_space(infile);
             va_append(statement_block, statement);
         }
         fgetc(infile);
@@ -279,7 +309,7 @@ Declaration* fget_declaration(FILE* infile) {
         Function* func = (Function*) decl;
         func->parameter_count = va_len(parameter_types);
         func->parameter_types = malloc(va_len(parameter_types) * sizeof(*func->parameter_types));
-        for (int i = 0; i < va_len(parameter_types); i++) {
+        for (size_t i = 0; i < va_len(parameter_types); i++) {
             func->parameter_types[i] = strinstrs(parameter_types[i], TYPE);
         }
         func->statements = statement_block;
@@ -300,7 +330,7 @@ Declaration* fget_declaration(FILE* infile) {
 Declaration** fparse_textual_ir(FILE* infile) {
     Declaration** decl_list = va_new(0);
     // Continue until the end of the file is reached.
-    while (fscanf(infile, " "), !feof(infile)) {
+    while (fskip_space(infile), !feof(infile)) {
         Declaration* decl = fget_declaration(infile);
         va_append(decl_list, decl);
     }

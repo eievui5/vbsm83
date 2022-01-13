@@ -54,7 +54,7 @@ whichever you prefer to read it as :)
     memmove((va) + (i), (va) + (i) + 1, va_size(va) - (i) * sizeof(*(va)) - sizeof(*(va))), \
     va_header(va)->size -= sizeof(*(va))
 #define va_free_contents(va) { \
-    for (int __i = 0; __i < va_len(va); __i++) \
+    for (size_t __i = 0; __i < va_len(va); __i++) \
         free(va[__i]); \
     va_free(va); }
 

@@ -21,12 +21,14 @@ const struct OptimizeOption optimization_options[] = {
     {NULL}
 };
 
+// Print info about each of the possible optimization options.
 void print_opt_help() {
     puts("Optimization options:\nPrefix an option with \"no-\" to disable it.");
-    for (int i = 0; optimization_options[i].name != NULL; i++)
+    for (size_t i = 0; optimization_options[i].name; i++)
         printf("  -f%-16s %s\n", optimization_options[i].name, optimization_options[i].desc);
 }
 
+// Read a -f flag and enable or disable the corresponding option.
 void parse_opt_flag(const char* arg) {
     static bool displayed_help = false;
     bool new_val = true;
@@ -35,7 +37,7 @@ void parse_opt_flag(const char* arg) {
         new_val = false;
         arg += 3;
     }
-    for (int i = 0; optimization_options[i].name != NULL; i++) {
+    for (size_t i = 0; optimization_options[i].name; i++) {
         if (strequ(optimization_options[i].name, arg)) {
             *optimization_options[i].flag = new_val;
             return;
@@ -50,6 +52,7 @@ void parse_opt_flag(const char* arg) {
     }
 }
 
+// Add a statement as the final element in a basic block.
 static void append_to_block(BasicBlock* bb, Statement* st) {
     if (bb->first == NULL) {
         // If the list is empty set st to both the first and final entry...
@@ -69,17 +72,19 @@ static void append_to_block(BasicBlock* bb, Statement* st) {
     st->parent = bb;
 }
 
+// Remove a statement from a basic block
 static void remove_from_block(BasicBlock* bb, Statement* st) {
     if (bb->first == st)
         bb->first = st->next;
     if (bb->final == st)
         bb->final = st->last;
-    if (st->next != NULL)
+    if (st->next)
         st->next->last = st->last;
-    if (st->last != NULL)
+    if (st->last)
         st->last->next = st->next;
 }
 
+// Initiallize members of a new basic block.
 static void init_block(BasicBlock* bb, char* label) {
     bb->label = label;
     bb->ref_count = 0;
@@ -87,40 +92,44 @@ static void init_block(BasicBlock* bb, char* label) {
     bb->final = NULL;
 }
 
-static LocalVar* iterate_locals(Function* func, unsigned* id) {
-    assert(id != NULL);
+// Helper function to aid in iterating through a function's local variables.
+static LocalVar* iterate_locals(Function* func, size_t* i) {
+    assert(i);
     LocalVar* this_local = NULL;
     while (1) {
-        if (*id >= va_len(func->locals))
+        if (*i >= va_len(func->locals))
             break;
-        this_local = func->locals[*id];
+        this_local = func->locals[*i];
         if (this_local == NULL)
-            *id += 1;
+            *i += 1;
         else
             break;
     }
     return this_local;
 }
 
+// Check if a local variable has a known, constant value.
 static bool is_local_const(LocalVar* local) {
-    return local->origin != NULL && local->origin->type == OPERATION
+    return local->origin && local->origin->type == OPERATION
            && ((Operation*) local->origin)->type == ASSIGN
            && ((Operation*) local->origin)->rhs.is_const;
 }
 
+// Get the constant value assigned to a local variable.
 static inline Value* get_local_const(LocalVar* local) {
     return &((Operation*) local->origin)->rhs;
 }
 
+// Count each time that a basic block is referenced by a jump.
 void count_block_references(Function* func) {
-    for (int i = 0; i < va_len(func->basic_blocks); i++)
+    for (size_t i = 0; i < va_len(func->basic_blocks); i++)
         func->basic_blocks[i].ref_count = 0;
-    for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        for (Statement* this_state = func->basic_blocks[i].first; this_state != NULL; this_state = this_state->next) {
+    for (size_t i = 0; i < va_len(func->basic_blocks); i++) {
+        for (Statement* this_state = func->basic_blocks[i].first; this_state; this_state = this_state->next) {
             if (this_state->type == JUMP) {
                 Jump* this_jump = ((Jump*) this_state);
 
-                for (int k = 0; k < va_len(func->basic_blocks); k++) {
+                for (size_t k = 0; k < va_len(func->basic_blocks); k++) {
                     if (func->basic_blocks[k].label == NULL)
                         continue;
                     if (strequ(this_jump->label, func->basic_blocks[k].label)) {
@@ -136,9 +145,10 @@ void count_block_references(Function* func) {
     }
 }
 
+// Count each time that a local variable is referenced in a function.
 void count_local_references(Function* func) {
-    for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        for (Statement* this_state = func->basic_blocks[i].first; this_state != NULL; this_state = this_state->next) {
+    for (size_t i = 0; i < va_len(func->basic_blocks); i++) {
+        for (Statement* this_state = func->basic_blocks[i].first; this_state; this_state = this_state->next) {
             switch (this_state->type) {
             case OPERATION: {
                 Operation* op = (Operation*) this_state;
@@ -173,7 +183,7 @@ void generate_local_vars(Function* func) {
     func->locals = va_new(func->parameter_count * sizeof(LocalVar*));
 
     // Begin with parameters
-    for (int i = 0; i < func->parameter_count; i++) {
+    for (size_t i = 0; i < func->parameter_count; i++) {
         func->locals[i] = malloc(sizeof(LocalVar));
         func->locals[i]->origin = NULL;
         func->locals[i]->references = va_new(0);
@@ -181,8 +191,8 @@ void generate_local_vars(Function* func) {
     }
 
     // Collect locals.
-    for (int i = 0; i < va_len(func->basic_blocks); i++) {
-        for (Statement* this_state = func->basic_blocks[i].first; this_state != NULL; this_state = this_state->next) {
+    for (size_t i = 0; i < va_len(func->basic_blocks); i++) {
+        for (Statement* this_state = func->basic_blocks[i].first; this_state; this_state = this_state->next) {
             size_t new_index;
             uint8_t type;
 
@@ -207,7 +217,7 @@ void generate_local_vars(Function* func) {
                 memset(func->locals + prev_len, 0, (new_index + 1 - prev_len) * sizeof(LocalVar*));
             }
 
-            if (func->locals[new_index] != NULL)
+            if (func->locals[new_index])
                 fatal("Local variable %%%zu in %s has been assigned twice.", new_index, func->declaration.identifier);
 
             func->locals[new_index] = malloc(sizeof(LocalVar));
@@ -224,7 +234,7 @@ void generate_basic_blocks(Function* func) {
     func->basic_blocks = va_new(sizeof(BasicBlock));
     init_block(func->basic_blocks, NULL);
 
-    for (int i = 0; i < va_len(func->statements); i++) {
+    for (size_t i = 0; i < va_len(func->statements); i++) {
         uint8_t statement_type = func->statements[i]->type;
         BasicBlock* last_block = &func->basic_blocks[va_len(func->basic_blocks) - 1];
         // Labels begin new basic blocks, unless the current block is empty and
@@ -236,7 +246,8 @@ void generate_basic_blocks(Function* func) {
                 va_expand(&func->basic_blocks, sizeof(BasicBlock));
                 BasicBlock* new_block = &func->basic_blocks[va_len(func->basic_blocks) - 1];
                 init_block(new_block, ((Label*) func->statements[i])->identifier);
-                error("Label \"%s\" is not followed by a jump; implicit fallthroughs are not allowed.", new_block->label);
+                error("Label \"%s\" is not followed by a jump; implicit fallthroughs are not allowed.",
+                      new_block->label);
             }
         } else if (statement_type == JUMP || statement_type == RETURN) {
             append_to_block(last_block, func->statements[i]);
@@ -262,7 +273,7 @@ void generate_basic_blocks(Function* func) {
 // This should be called multiple times to handle any changes in the program
 // flow.
 void remove_unused_blocks(Function* func) {
-    for (int i = 1; i < va_len(func->basic_blocks); i++) {
+    for (size_t i = 1; i < va_len(func->basic_blocks); i++) {
         // If the refcount of a block is 0, then there is no way it can be
         // reached.
         if (func->basic_blocks[i].ref_count == 0) {
@@ -277,7 +288,7 @@ void remove_unused_blocks(Function* func) {
 // Removes any unneccessary fallthroughs to unify basic blocks, allowing for
 // greater optimization potential.
 void remove_unused_fallthroughs(Function* func) {
-    for (int i = 1; i < va_len(func->basic_blocks); i++) {
+    for (size_t i = 1; i < va_len(func->basic_blocks); i++) {
         BasicBlock* this_block = &func->basic_blocks[i];
         BasicBlock* last_block = &func->basic_blocks[i - 1];
 
@@ -288,7 +299,7 @@ void remove_unused_fallthroughs(Function* func) {
             && strequ(((Jump*) last_block->final)->label, this_block->label)) {
 
             remove_from_block(last_block, last_block->final);
-            for (Statement* state = this_block->first; state != NULL;) {
+            for (Statement* state = this_block->first; state;) {
                 Statement* this_state = state;
                 state = state->next;
                 append_to_block(last_block, this_state);
@@ -303,14 +314,14 @@ void remove_unused_fallthroughs(Function* func) {
 // Remove needless casting assignments, such as `u8 %0 = 1; u8 %1 = %0;`.
 void remove_unused_casts(Function* func) {
     LocalVar* this_local = NULL;
-    for (unsigned i = 0; (this_local = iterate_locals(func, &i)) != NULL; i++) {
+    for (size_t i = 0; this_local = iterate_locals(func, &i); i++) {
 
         // This only handles direct assignemnt operations.
-        if (this_local->origin != NULL && this_local->origin->type == OPERATION) {
+        if (this_local->origin && this_local->origin->type == OPERATION) {
             Operation* origin_op = (Operation*) this_local->origin;
 
             if (origin_op->type == ASSIGN && !origin_op->rhs.is_const && this_local->type == func->locals[origin_op->rhs.local_id]->type) {
-                for (int j = 0; j < va_len(this_local->references); j++) {
+                for (size_t j = 0; j < va_len(this_local->references); j++) {
                     *this_local->references[j] = origin_op->rhs.local_id;
                 }
 
@@ -327,10 +338,9 @@ void remove_unused_casts(Function* func) {
 
 void fold_constant_operations(Function* func) {
     LocalVar* this_local = NULL;
-    for (unsigned i = 0; (this_local = iterate_locals(func, &i)) != NULL; i++) {
-        if (func->locals[i]->origin != NULL && func->locals[i]->origin->type == OPERATION) {
+    for (size_t i = 0; this_local = iterate_locals(func, &i); i++) {
+        if (func->locals[i]->origin && func->locals[i]->origin->type == OPERATION) {
             Operation* origin_op = (Operation*) this_local->origin;
-
 
             switch (origin_op->type) {
             case NOT: case NEGATE: case COMPLEMENT:
@@ -366,13 +376,20 @@ void fold_constant_operations(Function* func) {
                 Value* rhs_val = origin_op->rhs.is_const ? &origin_op->rhs : get_local_const(func->locals[origin_op->lhs]);
                 bool is_signed = lhs_val->is_signed || rhs_val->is_signed;
 
+                // This big, ugly macro helps avoid some big, ugly code.
+                // Just imagine 18 of these in a switch statement.
                 #define FOLD_BINOP(type, op) \
                     case type: \
                     if (is_signed) \
-                        origin_op->rhs.const_signed = (lhs_val->is_signed ? lhs_val->const_signed : lhs_val->const_unsigned) \
-                                                    op (rhs_val->is_signed ? rhs_val->const_signed : rhs_val->const_unsigned); \
+                        origin_op->rhs.const_signed = (lhs_val->is_signed ? \
+                                                       lhs_val->const_signed : \
+                                                       lhs_val->const_unsigned) \
+                                                    op (rhs_val->is_signed ? \
+                                                        rhs_val->const_signed : \
+                                                        rhs_val->const_unsigned); \
                     else \
-                        origin_op->rhs.const_unsigned = lhs_val->const_unsigned op rhs_val->const_unsigned; \
+                        origin_op->rhs.const_unsigned = lhs_val->const_unsigned \
+                                                        op rhs_val->const_unsigned; \
                     break
 
                 switch (origin_op->type) {
@@ -410,9 +427,10 @@ void fold_constant_operations(Function* func) {
 // Run various optimizations according to the user's options.
 void optimize_ir(Declaration** decls) {
     // Remove unused basic blocks.
-    for (int i = 0; i < va_len(decls); i++) {
+    for (size_t i = 0; i < va_len(decls); i++) {
         if (decls[i]->is_fn) {
             Function* func = (Function*) decls[i];
+
             if (remove_unused) {
                 remove_unused_blocks(func);
                 remove_unused_fallthroughs(func);

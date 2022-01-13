@@ -66,7 +66,7 @@ typedef struct Value {
     union {
         uint64_t const_unsigned;
         int64_t  const_signed;
-        unsigned local_id;
+        uint64_t local_id;
     };
 } Value;
 
@@ -84,22 +84,22 @@ typedef struct Operation {
     Statement statement;
     uint8_t type;
     uint8_t var_type;
-    unsigned dest; // ID of destination variable.
-    unsigned lhs; // ID of source varible; may not be a constant.
+    uint64_t dest; // ID of destination variable.
+    uint64_t lhs; // ID of source varible; may not be a constant.
     Value rhs; // Either a constant or a local ID. Ignored unless using binops.
 } Operation;
 
 typedef struct Read {
     Statement statement;
     uint8_t var_type;
-    unsigned dest;
+    uint64_t dest; // Destination local variable.
     char* src;
 } Read;
 
 typedef struct Write {
     Statement statement;
     char* dest;
-    unsigned src;
+    uint64_t src;
 } Write;
 
 typedef struct Jump {
@@ -124,7 +124,7 @@ typedef struct BasicBlock {
     char* label; // May be NULL.
     Statement* first;
     Statement* final;
-    unsigned ref_count;
+    uint64_t ref_count;
 } BasicBlock;
 
 // Functions can simply be treated as read-only global variables.

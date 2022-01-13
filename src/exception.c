@@ -1,10 +1,11 @@
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 bool ansi_exceptions;
-unsigned error_count = 0;
+uintmax_t error_count = 0;
 
 void warn(char const* fmt, ...) {
     va_list ap;

@@ -43,7 +43,8 @@ int main(int argc, char* argv[]) {
     // Check if stderr is a tty.
     ansi_exceptions = isatty(fileno(stderr));
 
-    // If the program is run without arguments, assume the user is asking for help.
+    // If the program is run without arguments, assume the user is asking for
+    // help.
     if (argc < 2) {
         warn("No arguments provided. Printing help.");
         puts("DCC SM83 backend");
@@ -52,7 +53,8 @@ int main(int argc, char* argv[]) {
     }
 
     // Parse command-line options.
-    for (char option_char; (option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1;) {
+    char option_char;
+    while ((option_char = getopt_long_only(argc, argv, shortopts, longopts, NULL)) != -1) {
         switch (option_char) {
         case 'a':
             ansi_exceptions ^= true;
@@ -97,7 +99,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Output optimized IR file is optional.
-	if (ir_out_path != NULL) {
+	if (ir_out_path) {
         if (strequ(ir_out_path, "-"))
             ir_out = stdout;
         else
@@ -107,7 +109,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Assembly output is also optional, in case only optimized IR is needed.
-	if (asm_out_path != NULL) {
+	if (asm_out_path) {
         if (strequ(asm_out_path, "-"))
             asm_out = stdout;
         else
@@ -130,23 +132,23 @@ int main(int argc, char* argv[]) {
     errcheck();
 
     // If an IR output file was provided, print to it now.
-    if (ir_out != NULL) {
+    if (ir_out) {
         if (va_len(declaration_list) > 0)
             fprint_declaration(ir_out, declaration_list[0]);
-        for (int i = 1; i < va_len(declaration_list); i++) {
+        for (size_t i = 1; i < va_len(declaration_list); i++) {
             fputc('\n', ir_out);
             fprint_declaration(ir_out, declaration_list[i]);
         }
     }
 
     // Final clean up before exit.
-    for (int i = 0; i < va_len(declaration_list); i++)
+    for (size_t i = 0; i < va_len(declaration_list); i++)
         free_declaration(declaration_list[i]);
     va_free(declaration_list);
 
     fclose(ir_in);
-    if (ir_out != NULL)
+    if (ir_out)
         fclose(ir_out);
-    if (asm_out != NULL)
+    if (asm_out)
         fclose(asm_out);
 }
