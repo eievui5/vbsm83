@@ -7,6 +7,7 @@
 #include "exception.h"
 #include "optimizer.h"
 #include "parser.h"
+#include "registers.h"
 #include "statements.h"
 #include "varray.h"
 
@@ -127,6 +128,12 @@ int main(int argc, char* argv[]) {
     // Parse the input IR file.
     Declaration** declaration_list = fparse_textual_ir(ir_in);
     optimize_ir(declaration_list);
+    for (size_t i = 0; i < va_len(declaration_list); i++) {
+        if (declaration_list[i]->is_fn) {
+            analyze_var_usage((Function*) declaration_list[i]);
+            fprint_var_usage(stdout, (Function*) declaration_list[i]);
+        }
+    }
 
     // Check for errors before writing to output files.
     errcheck();

@@ -1,9 +1,50 @@
+#include <assert.h>
 #include <stdio.h>
 #include <inttypes.h>
 
 #include "parser.h"
 #include "statements.h"
 #include "varray.h"
+
+// Iterate through every statement in a function's basic blocks.
+// The current basic block is returned through `i`.
+// If `statement` is NULL, begins with the first statement.
+// Returns NULL when done iterating.
+Statement* iterate_statements(Function* func, Statement* statement, size_t* i, size_t* block_no) {
+    if (statement == NULL) {
+        *i = 0;
+        *block_no = 0;
+        return func->basic_blocks[0].first;
+    }
+
+    *i += 1;
+
+    if (statement->next)
+        return statement->next;
+
+    *block_no += 1;
+
+    if (*block_no >= va_len(func->basic_blocks))
+        return NULL;
+
+    return func->basic_blocks[*block_no].first;
+}
+
+// Helper function to aid in iterating through a function's local variables.
+LocalVar* iterate_locals(Function* func, size_t* i) {
+    assert(i);
+    LocalVar* this_local = NULL;
+    while (1) {
+        if (*i >= va_len(func->locals))
+            break;
+        this_local = func->locals[*i];
+        if (this_local == NULL)
+            *i += 1;
+        else
+            break;
+    }
+    return this_local;
+}
 
 void fprint_value(FILE* out, Value* val) {
     if (!val->is_const)

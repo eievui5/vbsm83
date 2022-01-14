@@ -1,5 +1,3 @@
-#include <assert.h>
-
 #include "exception.h"
 #include "optimizer.h"
 #include "parser.h"
@@ -90,22 +88,6 @@ static void init_block(BasicBlock* bb, char* label) {
     bb->ref_count = 0;
     bb->first = NULL;
     bb->final = NULL;
-}
-
-// Helper function to aid in iterating through a function's local variables.
-static LocalVar* iterate_locals(Function* func, size_t* i) {
-    assert(i);
-    LocalVar* this_local = NULL;
-    while (1) {
-        if (*i >= va_len(func->locals))
-            break;
-        this_local = func->locals[*i];
-        if (this_local == NULL)
-            *i += 1;
-        else
-            break;
-    }
-    return this_local;
 }
 
 // Check if a local variable has a known, constant value.
