@@ -140,7 +140,9 @@ typedef struct Function {
 
 Statement* iterate_statements(Function* func, Statement* statement, size_t* i, size_t* block_no);
 LocalVar* iterate_locals(Function* func, size_t* i);
+LocalVar* get_local(Function* func, size_t i);
 void fprint_statement(FILE* out, Statement* statement);
 void fprint_declaration(FILE* out, Declaration* declaration);
+void free_local_var(LocalVar* local);
 void free_statement(Statement* statement);
 void free_declaration(Declaration* declaration);

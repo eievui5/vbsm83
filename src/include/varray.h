@@ -67,9 +67,9 @@ struct VArrayHeader {
 
 // Construct a new VArray of a given size.
 static inline void* va_new(size_t s) {
-    struct VArrayHeader* head = malloc(s * 2 + sizeof(struct VArrayHeader));
+    struct VArrayHeader* head = malloc((s ? s * 2 : 16) + sizeof(struct VArrayHeader));
     head->size = s;
-    head->_true_size = s * 2;
+    head->_true_size = s ? s * 2 : 16;
     return head + 1;
 }
 
@@ -82,13 +82,9 @@ static inline size_t va_size(void* va) {
 static inline void va_resize(void* va, size_t s) {
     struct VArrayHeader* head = va_header(*(void**) va);
     head->size = s;
-    if (head->size > head->_true_size) {
-        if (head->_true_size == 0)
-            head->_true_size = head->size * 2;
-        else while (head->size > head->_true_size)
-            head->_true_size *= 2;
-        head = realloc(va_header(*(void**) va), sizeof(struct VArrayHeader) + head->_true_size);
-    }
+    while (head->size > head->_true_size)
+        head->_true_size *= 2;
+    head = realloc(va_header(*(void**) va), sizeof(struct VArrayHeader) + head->_true_size);
     *(void**) va = head + 1;
 }
 

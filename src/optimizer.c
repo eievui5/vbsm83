@@ -90,6 +90,19 @@ static void init_block(BasicBlock* bb, char* label) {
     bb->final = NULL;
 }
 
+static void init_local(LocalVar** local, Statement* origin, uint8_t type) {
+    *local = malloc(sizeof(LocalVar));
+    LocalVar* this = *local;
+
+    this->origin = origin;
+    this->references = va_new(0);
+    this->type = type;
+    this->lifetime_start = 0;
+    this->lifetime_end = 0;
+    this->active_reg = 0;
+    this->reg_reallocs = va_new(0);
+}
+
 // Check if a local variable has a known, constant value.
 static bool is_local_const(LocalVar* local) {
     return local->origin && local->origin->type == OPERATION
@@ -149,12 +162,12 @@ void count_local_references(Function* func) {
                 }
             } break;
             case WRITE:
-                va_append(func->locals[((Write*) this_state)->src]->references, &((Write*) this_state)->src);
+                va_append(get_local(func, ((Write*) this_state)->src)->references, &((Write*) this_state)->src);
                 break;
             case RETURN: {
                 Return* ret = (Return*) this_state;
                 if (!ret->val.is_const)
-                    va_append(func->locals[ret->val.local_id]->references, &ret->val.local_id);
+                    va_append(get_local(func, ret->val.local_id)->references, &ret->val.local_id);
             } break;
             }
         }
@@ -165,12 +178,8 @@ void generate_local_vars(Function* func) {
     func->locals = va_new(func->parameter_count * sizeof(LocalVar*));
 
     // Begin with parameters
-    for (size_t i = 0; i < func->parameter_count; i++) {
-        func->locals[i] = malloc(sizeof(LocalVar));
-        func->locals[i]->origin = NULL;
-        func->locals[i]->references = va_new(0);
-        func->locals[i]->type = func->parameter_types[i];
-    }
+    for (size_t i = 0; i < func->parameter_count; i++)
+        init_local(&func->locals[i], NULL, func->parameter_types[i]);
 
     // Collect locals.
     for (size_t i = 0; i < va_len(func->basic_blocks); i++) {
@@ -202,10 +211,7 @@ void generate_local_vars(Function* func) {
             if (func->locals[new_index])
                 fatal("Local variable %%%zu in %s has been assigned twice.", new_index, func->declaration.identifier);
 
-            func->locals[new_index] = malloc(sizeof(LocalVar));
-            func->locals[new_index]->origin = this_state;
-            func->locals[new_index]->references = va_new(0);
-            func->locals[new_index]->type = type;
+            init_local(&func->locals[new_index], this_state, type);
         }
     }
 
@@ -309,8 +315,7 @@ void remove_unused_casts(Function* func) {
 
                 remove_from_block(this_local->origin->parent, this_local->origin);
 
-                va_free(this_local->references);
-                free(this_local);
+                free_local_var(this_local);
                 func->locals[i] = NULL;
             }
         }

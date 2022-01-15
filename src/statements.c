@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
+#include "exception.h"
 #include "parser.h"
 #include "statements.h"
 #include "varray.h"
@@ -44,6 +45,13 @@ LocalVar* iterate_locals(Function* func, size_t* i) {
             break;
     }
     return this_local;
+}
+
+LocalVar* get_local(Function* func, size_t i) {
+    if (func->locals[i])
+        return func->locals[i];
+    fatal("Attempted to access undeclared local variable, %%%zu, in %s.", i, func->declaration.identifier);
+    return NULL;
 }
 
 void fprint_value(FILE* out, Value* val) {
@@ -139,6 +147,12 @@ void fprint_declaration(FILE* out, Declaration* declaration) {
     }
 }
 
+void free_local_var(LocalVar* local) {
+    va_free(local->references);
+    va_free(local->reg_reallocs);
+    free(local);
+}
+
 void free_statement(Statement* statement) {
     switch (statement->type) {
     case READ: free(((Read*) statement)->src); break;
@@ -155,15 +169,15 @@ void free_declaration(Declaration* declaration) {
 
         for (size_t i = 0; i < va_len(func->statements); i++)
             free_statement(func->statements[i]);
-        for (size_t i = 0; i < va_len(func->locals); i++) {
-            if (func->locals[i])
-                va_free(func->locals[i]->references);
-        }
+
+        LocalVar* this_local = NULL;
+        for (size_t i = 0; this_local = iterate_locals(func, &i); i++)
+            free_local_var(this_local);
 
         free(func->parameter_types);
         va_free(func->basic_blocks);
         va_free(func->statements);
-        va_free_contents(func->locals);
+        va_free(func->locals);
     }
 
     free(declaration->identifier);

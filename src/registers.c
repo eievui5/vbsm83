@@ -3,12 +3,16 @@
 #include "statements.h"
 #include "varray.h"
 
-// Forward-declare 16-bit regs.
+// Define children of large registers.
+CPUReg* bc_children[] = {&b_reg, &c_reg, NULL};
+CPUReg* de_children[] = {&d_reg, &e_reg, NULL};
+CPUReg* hl_children[] = {&h_reg, &l_reg, NULL};
 
-extern CPUReg bc_reg;
-extern CPUReg de_reg;
-extern CPUReg hl_reg;
+CPUReg* bcde_children[] = {&bc_reg, &de_reg, NULL};
+CPUReg* dehl_children[] = {&de_reg, &hl_reg, NULL};
+CPUReg* hlbc_children[] = {&hl_reg, &bc_reg, NULL};
 
+// 8-bit registers
 CPUReg a_reg = {"a", 1};
 CPUReg c_reg = {"c", 1, &bc_reg};
 CPUReg b_reg = {"b", 1, &bc_reg};
@@ -17,16 +21,23 @@ CPUReg d_reg = {"d", 1, &de_reg};
 CPUReg l_reg = {"l", 1, &hl_reg};
 CPUReg h_reg = {"h", 1, &hl_reg};
 
-const CPUReg* bc_children[] = {&b_reg, &c_reg, NULL};
-const CPUReg* de_children[] = {&d_reg, &e_reg, NULL};
-const CPUReg* hl_children[] = {&h_reg, &l_reg, NULL};
-
+// 16-bit registers
 CPUReg bc_reg = {"bc", 2, NULL, bc_children};
 CPUReg de_reg = {"de", 2, NULL, de_children};
 CPUReg hl_reg = {"hl", 2, NULL, hl_children};
 
-CPUReg* short_regs[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, NULL};
-CPUReg* wide_regs[] = {&bc_reg, &de_reg, &hl_reg, NULL};
+// Note: 24-bit register unions are very much feasible, and would likely be a
+// useful addition. Please look into this ASAP.
+
+// 32-bit register unions
+CPUReg bcde_reg = {NULL, 4, NULL, bcde_children};
+CPUReg dehl_reg = {NULL, 4, NULL, dehl_children};
+CPUReg hlbc_reg = {NULL, 4, NULL, hlbc_children};
+
+// Register pools
+CPUReg* regs8[] = {&a_reg, &c_reg, &b_reg, &e_reg, &d_reg, &l_reg, &h_reg, NULL};
+CPUReg* regs16[] = {&bc_reg, &de_reg, &hl_reg, NULL};
+CPUReg* regs32[] = {&bcde_reg, &dehl_reg, &hlbc_reg, NULL};
 
 const uint8_t type_widths[] = {0, 1, 2, 4, 8, 1, 2, 4, 8, 4, 8, 2};
 
@@ -95,67 +106,103 @@ void analyze_var_usage(Function* func) {
     }
 }
 
-void fprint_var_usage(FILE* out, Function* func) {
-    fprintf(out, "Begin variable usage graph of %s.\n====================\n0 1 2 3 4 5 6 7 8 9\n",
-            func->declaration.identifier);
-    Statement* statement = NULL;
-    size_t cur_statement = 0;
-    size_t block_id = 0;
-    while (statement = iterate_statements(func, statement, &cur_statement, &block_id)) {
-        for (size_t i = 0; i < va_len(func->locals); i++) {
-            LocalVar* this_local = func->locals[i];
-
-            if (this_local == NULL) {
-                fputc(' ', out);
-            } else if (this_local->lifetime_start == cur_statement
-                || this_local->lifetime_end == cur_statement) {
-                fputc('#', out);
-            } else if (this_local->lifetime_start < cur_statement
-                       && this_local->lifetime_end > cur_statement) {
-                fputc('|', out);
-            } else {
-                fputc('.', out);
-            }
-            fputc(' ', out);
-        }
-        fprint_statement(out, statement);
-    }
-    fputs("====================\n", out);
-}
-
 void assign_registers(Function* func) {
+    // Reset usage of all registers.
+    for (size_t i = 0; regs8[i]; i++)
+        set_reg_usage(regs8[i], false);
+
+    // Assign arguments according to the ABI.
+    for (size_t i = 0; i < func->parameter_count; i++) {
+        CPUReg** reg_pool = NULL;
+
+        switch (type_widths[func->parameter_types[i]]) {
+        case 1: reg_pool = regs8 + 1; break; // The ABI skips `a`
+        case 2: reg_pool = regs16; break;
+        case 4: reg_pool = regs32; break;
+        }
+
+        if (reg_pool) {
+            size_t j;
+            for (j = 0; reg_pool[j]; j++) {
+                if (!is_reg_used(reg_pool[j])) {
+                    set_reg_usage(reg_pool[j], true);
+                    va_expand(&func->locals[i]->reg_reallocs, sizeof(RegRealloc));
+                    RegRealloc* new_reg = &va_last(func->locals[i]->reg_reallocs);
+                    new_reg->reg = reg_pool[j];
+                    new_reg->when = 0;
+                    break;
+                }
+            }
+            if (reg_pool[j] == NULL)
+                fatal("Ran out of CPU registers for paremeter %%%zu in %s", i, func->declaration.identifier);
+        } else {
+            fatal("No valid CPU registers for paremeter %%%zu in %s", i, func->declaration.identifier);
+        }
+    }
+
     Statement* statement = NULL;
     size_t cur_statement = 0;
     size_t block_id = 0;
     while (statement = iterate_statements(func, statement, &cur_statement, &block_id)) {
         LocalVar* this_local = NULL;
         for (size_t i = 0; this_local = iterate_locals(func, &i); i++) {
-            if (this_local->lifetime_start == cur_statement) {
+            if (!va_size(this_local->reg_reallocs) && this_local->lifetime_start == cur_statement) {
                 CPUReg** reg_pool = NULL;
 
                 switch (type_widths[this_local->type]) {
-                case 1: reg_pool = short_regs; break;
-                case 2: reg_pool = wide_regs; break;
+                case 1: reg_pool = regs8; break;
+                case 2: reg_pool = regs16; break;
+                case 4: reg_pool = regs32; break;
                 }
 
                 if (reg_pool) {
-                    for (size_t j = 0; reg_pool[j]; j++) {
-                        if (is_reg_used(reg_pool[j])) {
+                    size_t j;
+                    for (j = 0; reg_pool[j]; j++) {
+                        if (!is_reg_used(reg_pool[j])) {
                             set_reg_usage(reg_pool[j], true);
-                            this_local->reg = reg_pool[j];
+                            va_expand(&this_local->reg_reallocs, sizeof(RegRealloc));
+                            RegRealloc* new_reg = &va_last(func->locals[i]->reg_reallocs);
+                            new_reg->reg = reg_pool[j];
+                            new_reg->when = cur_statement;
+                            break;
                         }
                     }
+                    if (reg_pool[j] == NULL)
+                        fatal("Ran out of CPU registers for variable %%%zu in %s", i, func->declaration.identifier);
                 } else {
-                    fatal("Ran out of CPU registers for variable %%%zu in %s", i, func->declaration.identifier);
+                    fatal("No valid CPU registers for variable %%%zu in %s", i, func->declaration.identifier);
                 }
-            } else if (this_local->lifetime_end == cur_statement) {
-                if (this_local->reg) {
-                    set_reg_usage(this_local->reg, false);
-                    this_local->reg = NULL;
-                } else {
-                    error("Freeing local variable without register assignment.");
-                }
+            }
+            if (this_local->lifetime_end == cur_statement) {
+                if (va_len(this_local->reg_reallocs))
+                    set_reg_usage(va_last(this_local->reg_reallocs).reg, false);
             }
         }
     }
+
+    printf("Begin regalloc graph of %s.\n====================\n0  1  2  3  4  5  6  7  8  9\n",
+            func->declaration.identifier);
+    statement = NULL;
+    cur_statement = 0;
+    block_id = 0;
+    while (statement = iterate_statements(func, statement, &cur_statement, &block_id)) {
+        for (size_t i = 0; i < va_len(func->locals); i++) {
+            LocalVar* this_local = func->locals[i];
+
+            if (this_local == NULL) {
+                fputs("   ", stdout);
+            } else if (this_local->lifetime_start <= cur_statement
+                       && this_local->lifetime_end >= cur_statement) {
+                RegRealloc* this_reg = &this_local->reg_reallocs[this_local->active_reg];
+                if (va_size(this_local->reg_reallocs) && this_reg->reg)
+                    printf("%-3s", this_reg->reg->name);
+                else
+                    fputs("err", stdout);
+            } else {
+                fputs(".  ", stdout);
+            }
+        }
+        putchar('\n');
+    }
+    puts("====================");
 }

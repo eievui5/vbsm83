@@ -130,8 +130,9 @@ int main(int argc, char* argv[]) {
     optimize_ir(declaration_list);
     for (size_t i = 0; i < va_len(declaration_list); i++) {
         if (declaration_list[i]->is_fn) {
-            analyze_var_usage((Function*) declaration_list[i]);
-            fprint_var_usage(stdout, (Function*) declaration_list[i]);
+            Function* func = (Function*) declaration_list[i];
+            analyze_var_usage(func);
+            assign_registers(func);
         }
     }
 
