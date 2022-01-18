@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "gb/operations.h"
 #include "registers.h"
 
 enum VariableType {
@@ -87,6 +88,7 @@ typedef struct Operation {
     uint64_t dest; // ID of destination variable.
     uint64_t lhs; // ID of source varible; may not be a constant.
     Value rhs; // Either a constant or a local ID. Ignored unless using binops.
+    struct CpuOpInfo cpu_info;
 } Operation;
 
 typedef struct Read {

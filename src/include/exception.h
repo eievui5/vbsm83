@@ -19,7 +19,7 @@ void error(char const* fmt, ...);
 
 /* Print a fatal error message to stderr and end execution immediately.
  */
-void fatal(char const* fmt, ...);
+void fatal(char const* fmt, ...) __attribute__ ((__noreturn__));
 
 /* Exit the program if any errors have occured.
  */

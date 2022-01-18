@@ -13,10 +13,10 @@ typedef struct CPUReg {
     const char* name;
     // How many bytes wide is the register.
     const size_t size;
-    // Register which owns this register, if any.
-    struct CPUReg* parent;
-    // Registers that this register contains.
-    struct CPUReg** children;
+    // Most basic forms of the registers that this register contains.
+    // In the case of the SM83, this always means the 8-bit registers.
+    struct CPUReg** components;
+
     // Temporarily used during register allocation to mark a register as used.
     bool _in_use;
 } CPUReg;
