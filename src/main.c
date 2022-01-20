@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "compiler.h"
 #include "exception.h"
 #include "optimizer.h"
 #include "parser.h"
@@ -31,6 +32,20 @@ void print_help(char* name) {
          "  -i --input    Path to the input IR file.\n"
          "  -o --output   Path to the output assembly file.\n"
          "  -r --ir       Path to the output optimized IR file.");
+}
+
+// Attempt to open an optional output file and return it. If the file's path is
+// '-', then return stdout.
+FILE * open_optional_output(const char * path) {
+    if (path) {
+        FILE * file = NULL;
+        if (strequ(path, "-"))
+            file = stdout;
+        else
+            file = fopen(path, "w");
+        if (file == NULL)
+            error("Failed to open %s.", path);
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -94,30 +109,13 @@ int main(int argc, char* argv[]) {
     if (ir_in_path == NULL) {
         error("Missing input file path.");
     } else {
-    	ir_in = fopen(ir_in_path, "r");
-    	if (ir_in == NULL)
-    		error("Failed to open %s.", ir_in_path);
+        ir_in = fopen(ir_in_path, "r");
+        if (ir_in == NULL)
+            error("Failed to open %s.", ir_in_path);
     }
 
-    // Output optimized IR file is optional.
-	if (ir_out_path) {
-        if (strequ(ir_out_path, "-"))
-            ir_out = stdout;
-        else
-    	    ir_out = fopen(ir_out_path, "w");
-    	if (ir_out == NULL)
-    		error("Failed to open %s.", ir_out_path);
-    }
-
-    // Assembly output is also optional, in case only optimized IR is needed.
-	if (asm_out_path) {
-        if (strequ(asm_out_path, "-"))
-            asm_out = stdout;
-        else
-    	    asm_out = fopen(asm_out_path, "w");
-    	if (asm_out == NULL)
-    		error("Failed to open %s.", asm_out_path);
-    }
+    ir_out = open_optional_output(ir_out_path);
+    asm_out = open_optional_output(asm_out_path);
 
     if (asm_out == NULL && ir_out == NULL)
         warn("No output files were provided. Performing a dry run.");
