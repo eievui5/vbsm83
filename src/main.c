@@ -36,14 +36,19 @@ void print_help(char* name) {
 // Attempt to open an optional output file and return it. If the file's path is
 // '-', then return stdout.
 FILE * open_optional_output(const char * path) {
-    if (path) {
-        FILE * file = NULL;
-        if (strequ(path, "-"))
-            file = stdout;
-        else
-            file = fopen(path, "w");
-        if (file == NULL)
-            error("Failed to open %s.", path);
+    if (path==NULL) {
+        error("NULL in output path.");
+        return stdout;
+    }
+    if (strequ(path, "-"))
+        return stdout;
+
+    FILE * file = NULL;
+    if (file = fopen(path, "w")) {
+        return file;
+    } else {
+        error("Failed to open %s.", path);
+        return stdout; // a default value.
     }
 }
 
