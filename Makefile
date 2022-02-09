@@ -9,15 +9,12 @@ TESTFLAGS := --ir - --input examples/adder.dcc
 
 CFLAGS += $(DEBUGFLAGS)
 
-all:
-	$(MAKE) $(BIN)
+all: $(BIN)
 
 clean:
 	rm -rf bin/ obj/
 
-rebuild:
-	$(MAKE) clean
-	$(MAKE) all
+rebuild: clean all
 
 test: all
 	./$(BIN) $(TESTFLAGS)
