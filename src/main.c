@@ -4,7 +4,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "compiler.h"
 #include "exception.h"
 #include "optimizer.h"
 #include "parser.h"
